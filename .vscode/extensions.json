@@ -1,0 +1,25 @@
+{
+	"recommendations": [
+		// Essential for Svelte development
+		"svelte.svelte-vscode",
+		"ardenivanov.svelte-intellisense",
+
+		// Styling
+		"bradlc.vscode-tailwindcss",
+
+		// Code quality
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+
+		// Enhanced development experience
+		"usernamehw.errorlens",
+		"eamodio.gitlens",
+		"gruntfuggly.todo-tree",
+
+		// Useful utilities
+		"christian-kohler.path-intellisense",
+		"formulahendry.auto-rename-tag",
+		"naumovs.color-highlight",
+		"yoavbls.pretty-ts-errors"
+	]
+}
