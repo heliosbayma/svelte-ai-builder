@@ -1,38 +1,38 @@
-# sv
+# AI Svelte Builder
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Transform natural language prompts into Svelte components using AI with real-time preview.
 
-## Creating a project
+## Setup
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+```bash
+git clone <repository-url>
+cd svelte-ai-builder
+pnpm install
+pnpm dev
 ```
 
-## Developing
+Open <http://localhost:5173>
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## API Keys
 
-```sh
-npm run dev
+**Required**: At least one API key from:
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+- OpenAI (GPT models)
+- Anthropic (Claude models)
+- Google (Gemini models)
 
-## Building
+**How it works**:
 
-To create a production version of your app:
+- Keys stored locally in your browser only, never sent to our servers
+- Enter via Settings button on first use
+- Direct API calls from browser to chosen provider
 
-```sh
-npm run build
-```
+## Limitations
 
-You can preview the production build with `npm run preview`.
+- **Client-only**: Runs entirely in browser, no backend
+- **Your API costs**: You pay LLM providers directly for usage
+- **Single components**: Generates individual .svelte files, not full apps
+- **Modern browsers**: Requires ES modules and iframe support
+- **Internet required**: For API calls to LLM providers
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Built with SvelteKit + TypeScript + Tailwind CSS
