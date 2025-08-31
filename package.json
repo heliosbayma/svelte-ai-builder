@@ -50,5 +50,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"svelte-splitpanes": "^8.0.9"
 	}
 }
