@@ -52,6 +52,14 @@
 		});
 	}
 
+	function createInputHandler(provider: keyof ApiKeys) {
+		return (e: Event) => {
+			if (e.currentTarget instanceof HTMLInputElement) {
+				handleInput(provider, e.currentTarget.value);
+			}
+		};
+	}
+
 	function saveKeys() {
 		// Validate all non-empty keys
 		let hasError = false;
@@ -115,10 +123,10 @@
 			<CardContent class="space-y-4">
 				{#each LLM_PROVIDERS as provider}
 					<div class="space-y-2">
-						<Label for="{provider.key}-key" class="flex items-center gap-2">
+						<Label for={(provider.key + '-key')} class="flex items-center gap-2">
 							{provider.label}
 							<a
-								href="https://{provider.hint}"
+								href={`https://${provider.hint}`}
 								target="_blank"
 								rel="noopener"
 								class="text-xs text-muted-foreground hover:underline ml-auto"
@@ -127,15 +135,21 @@
 							</a>
 						</Label>
 						<Input
-							id="{provider.key}-key"
+							id={(provider.key + '-key')}
 							type="password"
 							placeholder={provider.placeholder}
 							value={keys[provider.key] || ''}
-							oninput={(e) => handleInput(provider.key, e.currentTarget.value)}
+							oninput={createInputHandler(provider.key)}
+							autocomplete="off"
+							autocapitalize="off"
+							spellcheck={false}
+							inputmode="text"
+							aria-invalid={!!errors[provider.key]}
+							aria-describedby={(provider.key + '-key-error')}
 							class={errors[provider.key] ? 'border-red-500 focus:ring-red-500' : ''}
 						/>
 						{#if errors[provider.key]}
-							<p class="text-xs text-red-500 animate-in fade-in">{errors[provider.key]}</p>
+							<p id={(provider.key + '-key-error')} class="text-xs text-red-500 animate-in fade-in">{errors[provider.key]}</p>
 						{/if}
 					</div>
 				{/each}

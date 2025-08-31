@@ -25,6 +25,16 @@
 			savedCodeSize = detail[1].size;
 		}
 	}
+
+	function generateComponent(): void {
+		// TODO: Implement component generation
+		console.log('Generate component functionality coming soon');
+	}
+
+	function copyCode(): void {
+		// TODO: Implement code copying
+		console.log('Copy code functionality coming soon');
+	}
 </script>
 
 <main class="h-screen bg-background flex flex-col">
@@ -46,7 +56,7 @@
 						class="mb-3"
 						rows={3}
 					/>
-					<Button class="w-full">Generate Component</Button>
+					<Button class="w-full" onclick={generateComponent}>Generate Component</Button>
 				</header>
 				<div class="flex-1 p-4 overflow-y-auto">
 					<p class="text-sm text-muted-foreground">Chat history will appear here...</p>
