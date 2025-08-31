@@ -10,7 +10,3 @@ export const LAYOUT = {
 	PANE_MIN_SIZE: 20,
 	CONTENT_MIN_SIZE: 40,
 } as const;
-
-// UI constants
-export const APP_VERSION = "v1.0.0";
-export const APP_NAME = "AI Svelte Builder";

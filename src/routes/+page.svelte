@@ -6,7 +6,7 @@
 
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
-	import { LAYOUT } from '$lib/constants.js';
+	import { LAYOUT } from '$lib/constants';
 
 	// State
 	let showCode = false;
