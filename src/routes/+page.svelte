@@ -30,6 +30,7 @@
 		b?: string;
 	}
 	let diffOps = $state<DiffOp[]>([]);
+	let showMetrics = $state(false);
 
 	// UI state persistence
 	const uiPersist = createPersistor<{ showCode: boolean; preview: number; code: number }>({
@@ -309,6 +310,8 @@
 		canRedo={$history.currentIndex < $history.versions.length - 1}
 		onUndo={handleUndo}
 		onRedo={handleRedo}
+		{showMetrics}
+		onToggleMetrics={() => (showMetrics = !showMetrics)}
 		on:selectVersion={handleSelectVersion}
 	/>
 
@@ -403,4 +406,6 @@
 	</Splitpanes>
 </main>
 
-<MetricsPanel />
+{#if showMetrics}
+	<MetricsPanel />
+{/if}

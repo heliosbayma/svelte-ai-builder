@@ -13,6 +13,8 @@
 		canRedo?: boolean;
 		onUndo?: () => void;
 		onRedo?: () => void;
+		showMetrics?: boolean;
+		onToggleMetrics?: () => void;
 	}
 
 	// Declare component events for TS consumers
@@ -28,7 +30,9 @@
 		canUndo = false,
 		canRedo = false,
 		onUndo,
-		onRedo
+		onRedo,
+		showMetrics = false,
+		onToggleMetrics
 	}: Props = $props();
 	let showApiKeySettings = $state(false);
 	let showHistory = $state(false);
@@ -156,6 +160,12 @@
 			{showCode ? 'Hide' : 'Show'} Code
 		</Button>
 		<Button variant="ghost" size="sm" onclick={openApiKeySettings}>API Keys</Button>
+		<Button
+			variant={showMetrics ? 'default' : 'ghost'}
+			size="sm"
+			onclick={onToggleMetrics}
+			aria-pressed={showMetrics ? 'true' : 'false'}>Metrics</Button
+		>
 		<div class="relative">
 			<Button
 				variant="ghost"
