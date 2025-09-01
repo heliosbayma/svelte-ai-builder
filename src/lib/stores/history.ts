@@ -2,6 +2,8 @@ import { writable, derived } from 'svelte/store';
 import { createPersistor } from '$lib/utils';
 
 export const HISTORY_MAX_VERSIONS = 50; // rolling window cap to limit memory/storage
+// Heuristic storage budget for serialized history payload (bytes)
+const HISTORY_STORAGE_BUDGET_BYTES = 4_500_000; // ~4.5MB leaves headroom under common 5MB limits
 
 export interface ComponentVersion {
 	id: string;
@@ -79,6 +81,35 @@ function createHistoryStore() {
 
 				// Limit the number of versions stored
 				if (newVersions.length > state.maxVersions) {
+					newVersions.shift();
+				}
+
+				// Storage quota guard: estimate serialized size and trim oldest until under budget
+				function estimatePersistSize(versions: ComponentVersion[], currentIndex: number): number {
+					try {
+						const minimal = {
+							versions: versions.map((v) => ({
+								id: v.id,
+								timestamp: v.timestamp,
+								prompt: v.prompt,
+								code: v.code,
+								provider: v.provider
+							})),
+							currentIndex
+						};
+						return JSON.stringify(minimal).length;
+					} catch {
+						return Infinity;
+					}
+				}
+
+				while (
+					estimatePersistSize(
+						newVersions,
+						Math.min(newVersions.length - 1, state.currentIndex + 1)
+					) > HISTORY_STORAGE_BUDGET_BYTES &&
+					newVersions.length > 1
+				) {
 					newVersions.shift();
 				}
 

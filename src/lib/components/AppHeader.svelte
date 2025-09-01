@@ -90,7 +90,16 @@
 				if (typeof version !== 'number' || version !== PERSIST_VERSION) {
 					return; // ignore invalid/mismatched dumps
 				}
-				for (const key of allPersistKeys(PERSIST_VERSION)) {
+				// summarize counts if available
+				const keys = allPersistKeys(PERSIST_VERSION);
+				const historyKey = keys.find((k) => k.includes(':history:')) || '';
+				const chatKey = keys.find((k) => k.includes(':chat:')) || '';
+				const histRaw = (json as any)[historyKey];
+				const chatRaw = (json as any)[chatKey];
+				const versionsCount = Array.isArray(histRaw?.versions) ? histRaw.versions.length : 0;
+				const messagesCount = Array.isArray(chatRaw?.messages) ? chatRaw.messages.length : 0;
+
+				for (const key of keys) {
 					if (Object.prototype.hasOwnProperty.call(json, key)) {
 						const value = json[key];
 						if (typeof value !== 'undefined') {
@@ -100,6 +109,11 @@
 						localStorage.removeItem(key);
 					}
 				}
+				try {
+					alert(
+						`Imported session: ${versionsCount} versions, ${messagesCount} messages. Reloading…`
+					);
+				} catch {}
 				location.reload();
 			} catch {
 				// ignore parse errors
