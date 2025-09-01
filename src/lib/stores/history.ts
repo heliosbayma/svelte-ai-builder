@@ -1,6 +1,8 @@
 import { writable } from 'svelte/store';
 import { createPersistor } from '$lib/utils';
 
+export const HISTORY_MAX_VERSIONS = 50;
+
 export interface ComponentVersion {
 	id: string;
 	timestamp: number;
@@ -22,7 +24,7 @@ function createHistoryStore() {
 	const initialState: HistoryState = {
 		versions: [],
 		currentIndex: -1,
-		maxVersions: 50 // Limit history to prevent memory issues
+		maxVersions: HISTORY_MAX_VERSIONS // Limit history to prevent memory issues
 	};
 
 	const persist = createPersistor<HistoryState>({
@@ -33,9 +35,9 @@ function createHistoryStore() {
 			const r = raw as Partial<HistoryState> | null;
 			if (!r || !Array.isArray(r.versions)) return null;
 			return {
-				versions: r.versions.slice(0, 50),
+				versions: r.versions.slice(0, HISTORY_MAX_VERSIONS),
 				currentIndex: typeof r.currentIndex === 'number' ? r.currentIndex : r.versions.length - 1,
-				maxVersions: 50
+				maxVersions: HISTORY_MAX_VERSIONS
 			};
 		}
 	});
