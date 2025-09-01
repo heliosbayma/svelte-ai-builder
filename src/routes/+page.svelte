@@ -232,6 +232,12 @@
 		}
 	}
 
+	function handleSelectVersion(e: CustomEvent<number>) {
+		const index = e.detail as number;
+		historyStore.goToVersion(index);
+		loadCurrentVersion();
+	}
+
 	// Watch for history changes to update UI
 	$effect(() => {
 		// This will reactively update when history changes
@@ -275,6 +281,7 @@
 		canRedo={$history.currentIndex < $history.versions.length - 1}
 		onUndo={handleUndo}
 		onRedo={handleRedo}
+		on:selectVersion={handleSelectVersion}
 	/>
 
 	<Splitpanes class="flex-1" horizontal={false}>
