@@ -1,5 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { createPersistor } from '$lib/utils';
+import type { LLMProviderType } from '$lib/services/llm/types';
 
 export const HISTORY_MAX_VERSIONS = 50; // rolling window cap to limit memory/storage
 // Heuristic storage budget for serialized history payload (bytes)
@@ -10,7 +11,7 @@ export interface ComponentVersion {
 	timestamp: number;
 	prompt: string;
 	code: string;
-	provider: string;
+	provider: LLMProviderType;
 	label?: string;
 	compiledJs?: string;
 	compiledCss?: string;
@@ -55,7 +56,7 @@ function createHistoryStore() {
 					timestamp: typeof v.timestamp === 'number' ? v.timestamp : Date.now(),
 					prompt: String(v.prompt ?? ''),
 					code: String(v.code ?? ''),
-					provider: String(v.provider ?? 'unknown'),
+					provider: (v.provider as LLMProviderType) ?? 'openai',
 					label: v.label ? String(v.label) : undefined
 				}));
 			return {
