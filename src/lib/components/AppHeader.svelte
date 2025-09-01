@@ -175,6 +175,11 @@
 				aria-expanded={showSessionMenu ? 'true' : 'false'}>Session ▾</Button
 			>
 			{#if showSessionMenu}
+				<button
+					class="fixed inset-0 z-40"
+					aria-label="Close session menu"
+					onclick={() => (showSessionMenu = false)}
+				></button>
 				<div
 					class="absolute right-0 z-50 mt-2 w-40 bg-card border rounded shadow-md p-1"
 					role="menu"
