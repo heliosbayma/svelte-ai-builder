@@ -25,4 +25,4 @@ export const LLM_PROVIDERS = [
 	}
 ] as const;
 
-export type ProviderKey = typeof LLM_PROVIDERS[number]['key'];
+export type ProviderKey = (typeof LLM_PROVIDERS)[number]['key'];

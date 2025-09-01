@@ -20,7 +20,7 @@ export function handleModalKeyboard(
 		e.preventDefault();
 		callbacks.onEscape();
 	}
-	
+
 	if (e.key === 'Enter') {
 		if (isMetaKey(e) && callbacks.onMetaEnter) {
 			e.preventDefault();

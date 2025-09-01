@@ -25,12 +25,8 @@
 		<span class="text-sm text-muted-foreground">v1.0.0</span>
 	</section>
 	<nav class="flex items-center gap-2">
-		<Button
-			variant={showCode ? "default" : "outline"}
-			size="sm"
-			onclick={onToggleCode}
-		>
-			{showCode ? "Hide" : "Show"} Code
+		<Button variant={showCode ? 'default' : 'outline'} size="sm" onclick={onToggleCode}>
+			{showCode ? 'Hide' : 'Show'} Code
 		</Button>
 		<Button variant="ghost" size="sm" onclick={openApiKeySettings}>API Keys</Button>
 		<Button variant="ghost" size="sm">Export</Button>

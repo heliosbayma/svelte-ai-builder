@@ -6,7 +6,7 @@
 		class?: string;
 	}
 
-	let { class: className = "" }: Props = $props();
+	let { class: className = '' }: Props = $props();
 	let iframeRef: HTMLIFrameElement | undefined;
 
 	function refreshPreview() {

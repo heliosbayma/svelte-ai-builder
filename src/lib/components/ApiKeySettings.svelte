@@ -2,8 +2,19 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { apiKeyStore, validateApiKey, getKeyErrorMessage, type ApiKeys } from '$lib/stores/apiKeys';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
+	import {
+		apiKeyStore,
+		validateApiKey,
+		getKeyErrorMessage,
+		type ApiKeys
+	} from '$lib/stores/apiKeys';
 	import { LLM_PROVIDERS } from '$lib/constants/providers';
 	import { handleModalKeyboard } from '$lib/utils/keyboard';
 
@@ -111,9 +122,7 @@
 	>
 		<Card class="w-full max-w-lg mx-4 animate-in zoom-in-95 duration-200">
 			<CardHeader>
-				<CardTitle id="modal-title">
-					API Key Settings
-				</CardTitle>
+				<CardTitle id="modal-title">API Key Settings</CardTitle>
 				<CardDescription>
 					Your keys are stored locally and never sent to any server.
 					<span class="text-xs block mt-1 opacity-70">Press ⌘+Enter to save, Esc to close</span>
@@ -121,9 +130,9 @@
 			</CardHeader>
 
 			<CardContent class="space-y-4">
-				{#each LLM_PROVIDERS as provider}
+				{#each LLM_PROVIDERS as provider (provider.key)}
 					<div class="space-y-2">
-						<Label for={(provider.key + '-key')} class="flex items-center gap-2">
+						<Label for={provider.key + '-key'} class="flex items-center gap-2">
 							{provider.label}
 							<a
 								href={`https://${provider.hint}`}
@@ -135,7 +144,7 @@
 							</a>
 						</Label>
 						<Input
-							id={(provider.key + '-key')}
+							id={provider.key + '-key'}
 							type="password"
 							placeholder={provider.placeholder}
 							value={keys[provider.key] || ''}
@@ -145,11 +154,13 @@
 							spellcheck={false}
 							inputmode="text"
 							aria-invalid={!!errors[provider.key]}
-							aria-describedby={(provider.key + '-key-error')}
+							aria-describedby={provider.key + '-key-error'}
 							class={errors[provider.key] ? 'border-red-500 focus:ring-red-500' : ''}
 						/>
 						{#if errors[provider.key]}
-							<p id={(provider.key + '-key-error')} class="text-xs text-red-500 animate-in fade-in">{errors[provider.key]}</p>
+							<p id={provider.key + '-key-error'} class="text-xs text-red-500 animate-in fade-in">
+								{errors[provider.key]}
+							</p>
 						{/if}
 					</div>
 				{/each}
@@ -165,17 +176,8 @@
 					</Button>
 
 					<div class="flex gap-2">
-						<Button
-							variant="outline"
-							onclick={onClose}
-						>
-							Cancel
-						</Button>
-						<Button
-							onclick={saveKeys}
-						>
-							Save Keys
-						</Button>
+						<Button variant="outline" onclick={onClose}>Cancel</Button>
+						<Button onclick={saveKeys}>Save Keys</Button>
 					</div>
 				</div>
 			</CardContent>

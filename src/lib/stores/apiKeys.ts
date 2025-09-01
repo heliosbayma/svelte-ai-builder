@@ -15,11 +15,11 @@ const defaultKeys: ApiKeys = {
 
 function loadKeys(): ApiKeys {
 	if (!browser) return defaultKeys;
-	
+
 	try {
 		const stored = localStorage.getItem('ai-builder-api-keys');
 		if (!stored) return defaultKeys;
-		
+
 		const parsed = JSON.parse(stored);
 		return {
 			openai: parsed.openai || null,
@@ -68,13 +68,13 @@ export function hasAnyApiKey(keys: ApiKeys): boolean {
 
 export function validateApiKey(provider: keyof ApiKeys, key: string): boolean {
 	if (!key?.trim()) return false;
-	
+
 	const prefixes = {
 		openai: 'sk-',
 		anthropic: 'sk-ant-',
 		gemini: 'AIza'
 	};
-	
+
 	return key.startsWith(prefixes[provider]) && key.length > 20;
 }
 
@@ -84,6 +84,6 @@ export function getKeyErrorMessage(provider: keyof ApiKeys): string {
 		anthropic: 'sk-ant-...',
 		gemini: 'AIza...'
 	};
-	
+
 	return `Invalid format (expected: ${formats[provider]})`;
 }
