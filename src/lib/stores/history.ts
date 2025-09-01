@@ -32,6 +32,7 @@ function createHistoryStore() {
 	const persist = createPersistor<HistoryState>({
 		key: 'history',
 		version: 1,
+		debounceMs: 200,
 		serialize: (s) => ({
 			versions: s.versions.map((v) => ({
 				id: v.id,

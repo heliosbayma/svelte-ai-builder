@@ -31,6 +31,7 @@ function createChatStore() {
 	const persist = createPersistor<ChatState>({
 		key: 'chat',
 		version: 1,
+		debounceMs: 200,
 		serialize: (s) => ({
 			// Do not persist generatedCode or streaming to avoid duplication with history and transient flags
 			messages: s.messages.map((m) => ({

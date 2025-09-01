@@ -6,6 +6,7 @@
 	import { llmClient } from '$lib/services';
 	import ChatMessage from './ChatMessage.svelte';
 	import { get } from 'svelte/store';
+	import { createPersistor } from '$lib/utils';
 
 	interface Props {
 		onCodeGenerated?: (code: string, prompt: string, provider: string) => void;
@@ -17,6 +18,23 @@
 	let isAtBottom = $state(true);
 	let pendingPlan = $state('');
 	let modelInput = $state('');
+	let lastProvider = $state<'openai' | 'anthropic' | 'gemini' | ''>('');
+
+	// Persist last-used model/provider (client-only)
+	const chatUiPersist = createPersistor<{
+		lastModel?: string;
+		lastProvider?: 'openai' | 'anthropic' | 'gemini';
+	}>({
+		key: 'ui-chat',
+		version: 1
+	});
+
+	$effect(() => {
+		// One-time restore
+		const restored = chatUiPersist.load({});
+		if (restored.lastModel) modelInput = restored.lastModel;
+		if (restored.lastProvider) lastProvider = restored.lastProvider;
+	});
 
 	// Subscribe to chat store
 	const chat = chatStore;
@@ -59,12 +77,16 @@
 			return;
 		}
 
-		// Prefer OpenAI for code gen quality, else Anthropic, else first available
-		const provider = availableProviders.includes('openai')
-			? 'openai'
-			: availableProviders.includes('anthropic')
-				? 'anthropic'
-				: availableProviders[0];
+		// Prefer last used provider if available, else OpenAI, else Anthropic, else first
+		const provider = (
+			lastProvider && (availableProviders as string[]).includes(lastProvider)
+				? lastProvider
+				: availableProviders.includes('openai')
+					? 'openai'
+					: availableProviders.includes('anthropic')
+						? 'anthropic'
+						: availableProviders[0]
+		) as 'openai' | 'anthropic' | 'gemini';
 
 		// Add user message
 		chatStore.addMessage({ role: 'user', content: prompt });
@@ -84,6 +106,8 @@
 
 		try {
 			console.log('Starting LLM generation:', { provider, prompt });
+			lastProvider = provider;
+			chatUiPersist.save({ lastModel: modelInput || undefined, lastProvider: provider });
 			// Get previous code for refinement context
 			const versions = chatStore.getComponentVersions();
 			const previousCode = versions[versions.length - 1]?.code;
@@ -128,9 +152,13 @@
 		if (!prompt || $chat.isGenerating) return;
 		const apiKeys = get(apiKeyStore);
 		const provider =
-			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
+			lastProvider && apiKeys[lastProvider]
+				? lastProvider
+				: (['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
 		chatStore.addMessage({ role: 'user', content: `PLAN: ${prompt}` });
 		try {
+			lastProvider = provider;
+			chatUiPersist.save({ lastModel: modelInput || undefined, lastProvider: provider });
 			const res = await llmClient.planPage(prompt, {
 				provider,
 				apiKey: apiKeys[provider]!,
@@ -178,9 +206,13 @@
 		if (!pendingPlan) return;
 		const apiKeys = get(apiKeyStore);
 		const provider =
-			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
+			lastProvider && apiKeys[lastProvider]
+				? lastProvider
+				: (['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
 		chatStore.addMessage({ role: 'user', content: 'BUILD FROM PLAN' });
 		try {
+			lastProvider = provider;
+			chatUiPersist.save({ lastModel: modelInput || undefined, lastProvider: provider });
 			const res = await llmClient.buildPageFromPlan(pendingPlan, {
 				provider,
 				apiKey: apiKeys[provider]!,

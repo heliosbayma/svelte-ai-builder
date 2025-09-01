@@ -59,3 +59,27 @@ export function summarize(events: TelemetryEvent[]) {
 	const totalTokens = events.reduce((a, b) => a + (b.usage?.totalTokens || 0), 0);
 	return { count, avgMs, totalTokens };
 }
+
+// Derived summaries
+import { derived } from 'svelte/store';
+export const telemetrySummary = derived(telemetryStore, (s) => summarize(s.events));
+
+export const telemetryByProvider = derived(telemetryStore, (s) => {
+	const groups: Record<
+		string,
+		{ count: number; avgMs: number; errorRate: number; totalTokens: number }
+	> = {};
+	const byProvider: Record<string, TelemetryEvent[]> = {};
+	for (const e of s.events) {
+		(byProvider[e.provider] ||= []).push(e);
+	}
+	for (const [provider, evs] of Object.entries(byProvider)) {
+		const count = evs.length;
+		const avgMs = count ? Math.round(evs.reduce((a, b) => a + b.ms, 0) / count) : 0;
+		const errors = evs.filter((e) => !e.ok).length;
+		const errorRate = count ? Math.round((errors / count) * 100) / 100 : 0;
+		const totalTokens = evs.reduce((a, b) => a + (b.usage?.totalTokens || 0), 0);
+		groups[provider] = { count, avgMs, errorRate, totalTokens };
+	}
+	return groups;
+});

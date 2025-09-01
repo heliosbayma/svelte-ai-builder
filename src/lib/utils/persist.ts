@@ -17,11 +17,14 @@ export interface PersistConfig<T> {
 	serialize?: (data: T) => unknown;
 	deserialize?: (raw: unknown) => T | null;
 	throttleMs?: number;
+	debounceMs?: number;
 }
 
 export function createPersistor<T>(config: PersistConfig<T>) {
 	let lastWrite = 0;
-	const { key, version, serialize, deserialize, throttleMs = 400 } = config;
+	const { key, version, serialize, deserialize, throttleMs = 400, debounceMs = 0 } = config;
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let pendingData: T | null = null;
 
 	function namespaced() {
 		// Use centralized keys when available
@@ -31,7 +34,7 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 		return `ai-builder:${key}:v${version}`;
 	}
 
-	function save(data: T) {
+	function doSave(data: T) {
 		if (!browser) return;
 		const now = Date.now();
 		if (now - lastWrite < throttleMs) return;
@@ -42,6 +45,20 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 		} catch (err) {
 			if (import.meta.env.DEV) console.debug('persist/save failed', err);
 		}
+	}
+
+	function save(data: T) {
+		if (debounceMs > 0) {
+			pendingData = data;
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				if (pendingData != null) doSave(pendingData);
+				pendingData = null;
+				debounceTimer = null;
+			}, debounceMs);
+			return;
+		}
+		doSave(data);
 	}
 
 	function load(defaultValue: T): T {
