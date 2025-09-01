@@ -31,6 +31,8 @@
 	}: Props = $props();
 	let showApiKeySettings = $state(false);
 	let showHistory = $state(false);
+	let showSessionMenu = $state(false);
+	let fileInput: HTMLInputElement | null = null;
 
 	function openApiKeySettings() {
 		showApiKeySettings = true;
@@ -47,6 +49,61 @@
 	function selectVersion(index: number) {
 		dispatch('selectVersion', index);
 		showHistory = false;
+	}
+
+	function exportSession() {
+		try {
+			const keys = ['ai-builder:history:v1', 'ai-builder:chat:v1', 'ai-builder:ui:v1'];
+			const data: Record<string, unknown> = { __version: 1 };
+			for (const k of keys) {
+				const v = localStorage.getItem(k);
+				if (v) data[k] = JSON.parse(v);
+			}
+			const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `ai-svelte-session-${new Date().toISOString().slice(0, 19)}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch {}
+	}
+
+	function triggerImport() {
+		fileInput?.click();
+	}
+
+	function handleImportFile(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				const json = JSON.parse(String(reader.result || '{}')) as Record<string, unknown>;
+				for (const key of Object.keys(json)) {
+					if (key.startsWith('ai-builder:') && typeof (json as any)[key] !== 'undefined') {
+						localStorage.setItem(key, JSON.stringify((json as any)[key]));
+					}
+				}
+				location.reload();
+			} catch {}
+		};
+		reader.readAsText(file);
+	}
+
+	function clearSession() {
+		if (!confirm('Clear session? This will remove chat, history and UI state.')) return;
+		try {
+			['ai-builder:history:v1', 'ai-builder:chat:v1', 'ai-builder:ui:v1'].forEach((k) =>
+				localStorage.removeItem(k)
+			);
+			location.reload();
+		} catch {}
+	}
+
+	function toggleSessionMenu() {
+		showSessionMenu = !showSessionMenu;
 	}
 </script>
 
@@ -87,9 +144,56 @@
 			{showCode ? 'Hide' : 'Show'} Code
 		</Button>
 		<Button variant="ghost" size="sm" onclick={openApiKeySettings}>API Keys</Button>
-		<Button variant="ghost" size="sm">Export</Button>
+		<div class="relative">
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={toggleSessionMenu}
+				aria-haspopup="menu"
+				aria-expanded={showSessionMenu ? 'true' : 'false'}>Session ▾</Button
+			>
+			{#if showSessionMenu}
+				<div
+					class="absolute right-0 z-50 mt-2 w-40 bg-card border rounded shadow-md p-1"
+					role="menu"
+				>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
+						role="menuitem"
+						onclick={() => {
+							exportSession();
+							showSessionMenu = false;
+						}}>Export</button
+					>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
+						role="menuitem"
+						onclick={() => {
+							triggerImport();
+							showSessionMenu = false;
+						}}>Import</button
+					>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
+						role="menuitem"
+						onclick={() => {
+							clearSession();
+							showSessionMenu = false;
+						}}>Clear</button
+					>
+				</div>
+			{/if}
+		</div>
 	</nav>
 </header>
+
+<input
+	bind:this={fileInput}
+	type="file"
+	accept="application/json"
+	class="hidden"
+	onchange={handleImportFile}
+/>
 
 {#if showHistory}
 	<!-- simple side drawer -->
