@@ -106,16 +106,34 @@
 				<ul class="space-y-2">
 					{#each $history.versions as v, idx (v.id)}
 						<li>
-							<button
-								class="w-full text-left border rounded p-2 hover:bg-muted"
-								onclick={() => selectVersion(idx)}
-								aria-label="Revert to version"
-							>
-								<div class="text-xs text-muted-foreground">
-									{new Date(v.timestamp).toLocaleTimeString()}
-								</div>
-								<div class="text-sm line-clamp-2">{v.prompt}</div>
-							</button>
+							{#if idx === $history.currentIndex}
+								<button
+									class="w-full text-left border rounded p-2 bg-muted border-primary cursor-default"
+									disabled
+									aria-current="true"
+									aria-label="Current version"
+								>
+									<div class="text-xs text-muted-foreground flex items-center gap-2">
+										<span>{new Date(v.timestamp).toLocaleTimeString()}</span>
+										<span class="px-1 py-0.5 text-[10px] rounded bg-primary/10 text-primary"
+											>current</span
+										>
+									</div>
+									<div class="text-sm line-clamp-2">{v.prompt}</div>
+								</button>
+							{:else}
+								<button
+									class="w-full text-left border rounded p-2 hover:bg-muted"
+									onclick={() => selectVersion(idx)}
+									aria-current="false"
+									aria-label="Revert to version"
+								>
+									<div class="text-xs text-muted-foreground flex items-center gap-2">
+										<span>{new Date(v.timestamp).toLocaleTimeString()}</span>
+									</div>
+									<div class="text-sm line-clamp-2">{v.prompt}</div>
+								</button>
+							{/if}
 						</li>
 					{/each}
 				</ul>
