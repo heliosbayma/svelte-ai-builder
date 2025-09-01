@@ -29,5 +29,4 @@ export interface LLMOptions {
 	signal?: AbortSignal;
 	onStream?: (response: LLMStreamResponse) => void;
 	purpose?: 'generate' | 'plan' | 'build' | 'repair' | 'other';
-	promptVariant?: 'A' | 'B';
 }

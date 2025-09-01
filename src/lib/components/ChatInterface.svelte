@@ -17,7 +17,6 @@
 	let isAtBottom = $state(true);
 	let pendingPlan = $state('');
 	let modelInput = $state('');
-	let promptVariant = $state<'A' | 'B'>('A');
 
 	// Subscribe to chat store
 	const chat = chatStore;
@@ -96,7 +95,6 @@
 					apiKey: apiKeys[provider]!,
 					model: modelInput || undefined,
 					signal: new AbortController().signal,
-					promptVariant,
 					purpose: 'generate'
 				},
 				previousCode
@@ -133,7 +131,6 @@
 				provider,
 				apiKey: apiKeys[provider]!,
 				model: modelInput || undefined,
-				promptVariant,
 				purpose: 'plan'
 			});
 			let raw = res.content?.trim() || '';
@@ -153,7 +150,6 @@
 				const res2 = await llmClient.planPage(prompt, {
 					provider,
 					apiKey: apiKeys[provider]!,
-					promptVariant,
 					purpose: 'plan'
 				});
 				let raw2 = res2.content?.trim() || '';
@@ -185,7 +181,6 @@
 				provider,
 				apiKey: apiKeys[provider]!,
 				model: modelInput || undefined,
-				promptVariant,
 				purpose: 'build'
 			});
 			chatStore.addMessage({ role: 'assistant', content: res.content });
@@ -199,7 +194,6 @@
 				const res2 = await llmClient.buildPageFromPlan(pendingPlan, {
 					provider,
 					apiKey: apiKeys[provider]!,
-					promptVariant,
 					purpose: 'build'
 				});
 				chatStore.addMessage({ role: 'assistant', content: res2.content });
@@ -313,14 +307,6 @@
 							disabled={!pendingPlan || $chat.isGenerating}
 							aria-label="Build from plan">Build</Button
 						>
-						<select
-							class="h-9 px-2 text-sm border rounded-md bg-background"
-							bind:value={promptVariant}
-							aria-label="Prompt variant"
-						>
-							<option value="A">Prompt A</option>
-							<option value="B">Prompt B</option>
-						</select>
 						<select
 							class="h-9 px-2 text-sm border rounded-md bg-background"
 							bind:value={modelInput}

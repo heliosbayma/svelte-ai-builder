@@ -13,4 +13,3 @@ export type {
 	LLMOptions,
 	LLMProviderType
 } from './types';
-export { systemPromptByVariant, buildFromPlanByVariant } from './registry';
