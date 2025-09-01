@@ -3,6 +3,7 @@
 	import ApiKeySettings from './ApiKeySettings.svelte';
 	import { historyStore } from '$lib/stores/history';
 	import { createEventDispatcher } from 'svelte';
+	import { allPersistKeys, PERSIST_VERSION } from '$lib/utils';
 	const history = historyStore;
 
 	interface Props {
@@ -53,8 +54,8 @@
 
 	function exportSession() {
 		try {
-			const keys = ['ai-builder:history:v1', 'ai-builder:chat:v1', 'ai-builder:ui:v1'];
-			const data: Record<string, unknown> = { __version: 1 };
+			const keys = allPersistKeys(PERSIST_VERSION);
+			const data: Record<string, unknown> = { __version: PERSIST_VERSION };
 			for (const k of keys) {
 				const v = localStorage.getItem(k);
 				if (v) data[k] = JSON.parse(v);
@@ -81,6 +82,7 @@
 		reader.onload = () => {
 			try {
 				const json = JSON.parse(String(reader.result || '{}')) as Record<string, unknown>;
+				if (typeof (json as any).__version !== 'number') return;
 				for (const key of Object.keys(json)) {
 					if (key.startsWith('ai-builder:') && typeof (json as any)[key] !== 'undefined') {
 						localStorage.setItem(key, JSON.stringify((json as any)[key]));
@@ -95,9 +97,7 @@
 	function clearSession() {
 		if (!confirm('Clear session? This will remove chat, history and UI state.')) return;
 		try {
-			['ai-builder:history:v1', 'ai-builder:chat:v1', 'ai-builder:ui:v1'].forEach((k) =>
-				localStorage.removeItem(k)
-			);
+			for (const k of allPersistKeys(PERSIST_VERSION)) localStorage.removeItem(k);
 			location.reload();
 		} catch {}
 	}

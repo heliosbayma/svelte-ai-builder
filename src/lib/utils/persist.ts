@@ -1,7 +1,18 @@
 import { browser } from '$app/environment';
 
+export const PERSIST_VERSION = 1;
+export const PERSIST_KEYS = {
+	history: (v: number = PERSIST_VERSION) => `ai-builder:history:v${v}`,
+	chat: (v: number = PERSIST_VERSION) => `ai-builder:chat:v${v}`,
+	ui: (v: number = PERSIST_VERSION) => `ai-builder:ui:v${v}`
+} as const;
+
+export function allPersistKeys(version: number = PERSIST_VERSION): string[] {
+	return [PERSIST_KEYS.history(version), PERSIST_KEYS.chat(version), PERSIST_KEYS.ui(version)];
+}
+
 export interface PersistConfig<T> {
-	key: string;
+	key: 'history' | 'chat' | 'ui' | string;
 	version: number;
 	serialize?: (data: T) => unknown;
 	deserialize?: (raw: unknown) => T | null;
@@ -13,6 +24,10 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 	const { key, version, serialize, deserialize, throttleMs = 400 } = config;
 
 	function namespaced() {
+		// Use centralized keys when available
+		if (key === 'history') return PERSIST_KEYS.history(version);
+		if (key === 'chat') return PERSIST_KEYS.chat(version);
+		if (key === 'ui') return PERSIST_KEYS.ui(version);
 		return `ai-builder:${key}:v${version}`;
 	}
 
@@ -24,7 +39,9 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 		try {
 			const payload = serialize ? serialize(data) : data;
 			localStorage.setItem(namespaced(), JSON.stringify(payload));
-		} catch {}
+		} catch (err) {
+			if (import.meta.env.DEV) console.debug('persist/save failed', err);
+		}
 	}
 
 	function load(defaultValue: T): T {
@@ -37,7 +54,8 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 				return deserialize(parsed) ?? defaultValue;
 			}
 			return parsed as T;
-		} catch {
+		} catch (err) {
+			if (import.meta.env.DEV) console.debug('persist/load failed', err);
 			return defaultValue;
 		}
 	}
@@ -46,7 +64,9 @@ export function createPersistor<T>(config: PersistConfig<T>) {
 		if (!browser) return;
 		try {
 			localStorage.removeItem(namespaced());
-		} catch {}
+		} catch (err) {
+			if (import.meta.env.DEV) console.debug('persist/clear failed', err);
+		}
 	}
 
 	return { save, load, clear };
