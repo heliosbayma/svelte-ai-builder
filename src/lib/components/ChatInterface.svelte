@@ -120,8 +120,23 @@
 			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
 		chatStore.addMessage({ role: 'user', content: `PLAN: ${prompt}` });
 		const res = await llmClient.planPage(prompt, { provider, apiKey: apiKeys[provider]! });
-		pendingPlan = res.content;
-		chatStore.addMessage({ role: 'assistant', content: pendingPlan });
+		let raw = res.content?.trim() || '';
+		// Strip fences if provider ignores instruction
+		raw = raw
+			.replace(/^```[a-zA-Z]*\n?/, '')
+			.replace(/```$/, '')
+			.trim();
+		try {
+			JSON.parse(raw);
+			pendingPlan = raw;
+			chatStore.addMessage({ role: 'assistant', content: pendingPlan });
+		} catch {
+			pendingPlan = '';
+			chatStore.addMessage({
+				role: 'assistant',
+				content: 'Plan failed to produce valid JSON. Please try again or refine your request.'
+			});
+		}
 	}
 
 	async function handleBuildFromPlan() {
@@ -235,7 +250,7 @@
 						<Button
 							variant="outline"
 							onclick={handleBuildFromPlan}
-							disabled={!pendingPlan}
+							disabled={!pendingPlan || $chat.isGenerating}
 							aria-label="Build from plan">Build</Button
 						>
 					</div>

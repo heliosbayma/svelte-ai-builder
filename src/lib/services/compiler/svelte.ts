@@ -76,7 +76,6 @@ export class SvelteCompiler {
 		source = source.replace(/^interface\s*$/gm, '// interface removed');
 		source = source.replace(/interface\s*\{/g, 'interface Props {');
 		source = source.replace(/^\s*Props\s*\{/gm, 'interface Props {'); // Fix "Props {" -> "interface Props {"
-		source = source.replace(/^\s*\{[\s\S]*?\}/gm, '// removed malformed block'); // Remove standalone { ... } blocks
 
 		// Fix common TypeScript syntax errors - remove stray closing braces
 		source = source.replace(/^\s*\}\s*$/gm, '');

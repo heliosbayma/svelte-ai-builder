@@ -90,40 +90,67 @@ export function createBuildFromPlanPrompt(planJson: string): string {
 PLAN JSON:
 ${planJson}
 
-SECTION CATALOG (examples to adapt):
-// TopNav
+MAPPING RULES (must follow):
+- Use plan.sections to populate TopNav, Hero, CardGrid. Do not invent extra sections.
+- For TopNav: render logoText and links.
+- For Hero: render title/subtitle/primaryCta/secondaryCta?/imageUrl?.
+- For CardGrid: render columns and cards exactly from plan.
+- Add minimal interactivity: let cartCount = $state(0); function addToCart(){ cartCount += 1 }
+- All event handlers MUST be named functions (e.g., handlePrimary) and called via onclick={handlePrimary}.
+- Include interface Props { title?: string } and destructure via $props().
+- Use Tailwind v4 classes; no external scripts or legacy syntax.
+
+SCAFFOLD (adapt; keep concise):
+<script lang="ts">
+interface Props { title?: string }
+let { title = 'Page' }: Props = $props();
+let cartCount = $state(0);
+function addToCart() { cartCount += 1 }
+function handlePrimary() {}
+function handleSecondary() {}
+const links = [] as Array<{label:string;href:string}>;
+const cards = [] as Array<{title:string;price?:string;imageUrl?:string;badge?:string}>;
+const columns = 3;
+const hero = { title: '', subtitle: '', primaryCta: '', secondaryCta: '', imageUrl: '' };
+function placeholder(seed: string, w = 640, h = 360) { return \`https://picsum.photos/seed/\${encodeURIComponent(seed)}/\${w}/\${h}\`; }
+function safeImage(url?: string | null, seed = 'image', w = 640, h = 360) {
+  if (!url || /^url_to_/i.test(url)) return placeholder(seed, w, h);
+  try { const u = new URL(url); return u.protocol.startsWith('http') ? url : placeholder(seed, w, h); } catch { return placeholder(seed, w, h); }
+}
+</script>
+
 <nav class="flex items-center justify-between px-4 h-14 bg-background text-foreground">
-  <div class="font-bold">{logoText}</div>
+  <div class="font-bold">{title}</div>
   <div class="flex items-center gap-4">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary">{l.label}</a>{/each}</div>
+  <div class="text-sm">Cart: {cartCount}</div>
 </nav>
 
-// Hero
 <section class="relative overflow-hidden py-16 bg-gradient-to-br from-primary/10 to-blue-500/10">
   <div class="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
     <div>
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">{title}</h1>
-      <p class="text-muted-foreground mb-6">{subtitle}</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">{hero.title}</h1>
+      {#if hero.subtitle}<p class="text-muted-foreground mb-6">{hero.subtitle}</p>{/if}
       <div class="flex gap-3">
-        <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground" onclick={handlePrimary}>{primaryCta}</button>
-        {#if secondaryCta}<button class="px-4 py-2 rounded-md border" onclick={handleSecondary}>{secondaryCta}</button>{/if}
+        {#if hero.primaryCta}<button class="px-4 py-2 rounded-md bg-primary text-primary-foreground" onclick={handlePrimary}>{hero.primaryCta}</button>{/if}
+        {#if hero.secondaryCta}<button class="px-4 py-2 rounded-md border" onclick={handleSecondary}>{hero.secondaryCta}</button>{/if}
       </div>
     </div>
-    {#if imageUrl}<img src={imageUrl} alt="" class="rounded-lg shadow-md" />{/if}
+    <img src={safeImage(hero.imageUrl, hero.title, 720, 480)} alt="" class="rounded-lg shadow-md" />
   </div>
 </section>
 
-// CardGrid
 <section class="container mx-auto px-4 py-12">
   <div class="grid gap-6" style={\`grid-template-columns: repeat(\${columns}, minmax(0,1fr));\`}>
     {#each cards as c (c.title)}
       <article class="bg-card text-card-foreground rounded-lg border overflow-hidden">
-        {#if c.imageUrl}<img src={c.imageUrl} alt="" class="w-full h-40 object-cover" />{/if}
+        <img src={safeImage(c.imageUrl, c.title, 480, 240)} alt="" class="w-full h-40 object-cover" />
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-semibold">{c.title}</h3>
             {#if c.badge}<span class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white">{c.badge}</span>{/if}
           </div>
           {#if c.price}<p class="text-sm text-muted-foreground">{c.price}</p>{/if}
+          <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded" onclick={addToCart}>Add to Cart</button>
         </div>
       </article>
     {/each}
