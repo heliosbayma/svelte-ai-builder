@@ -8,7 +8,7 @@
 	import { get } from 'svelte/store';
 
 	interface Props {
-		onCodeGenerated?: (code: string) => void;
+		onCodeGenerated?: (code: string, prompt: string, provider: string) => void;
 	}
 
 	let { onCodeGenerated }: Props = $props();
@@ -57,11 +57,11 @@
 			return;
 		}
 
-		// Prefer Anthropic > OpenAI > Gemini
-		const provider = availableProviders.includes('anthropic')
-			? 'anthropic'
-			: availableProviders.includes('openai')
-				? 'openai'
+		// Prefer OpenAI for code gen quality, else Anthropic, else first available
+		const provider = availableProviders.includes('openai')
+			? 'openai'
+			: availableProviders.includes('anthropic')
+				? 'anthropic'
 				: availableProviders[0];
 
 		// Add user message
@@ -84,6 +84,8 @@
 		chatStore.startGeneration(provider, requestId);
 
 		try {
+			console.log('Starting LLM generation:', { provider, prompt });
+
 			// Get previous code for refinement context
 			const versions = chatStore.getComponentVersions();
 			const previousCode = versions[versions.length - 1]?.code;
@@ -95,17 +97,12 @@
 				{
 					provider,
 					apiKey: apiKeys[provider]!,
-					signal: new AbortController().signal,
-					onStream: (streamResponse) => {
-						accumulatedContent = streamResponse.accumulated;
-						chatStore.updateMessage(assistantMessageId, {
-							content: accumulatedContent,
-							streaming: !streamResponse.done
-						});
-					}
+					signal: new AbortController().signal
 				},
 				previousCode
 			);
+
+			console.log('LLM generation completed:', response);
 
 			// Final update with generated code
 			chatStore.updateMessage(assistantMessageId, {
@@ -115,7 +112,7 @@
 			});
 
 			// Notify parent component
-			onCodeGenerated?.(response.content);
+			onCodeGenerated?.(response.content, prompt, provider);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 			chatStore.updateMessage(assistantMessageId, {
@@ -129,7 +126,15 @@
 	}
 
 	function handleUseCode(code: string) {
-		onCodeGenerated?.(code);
+		// Find the message containing this code to get context
+		const message = $chat.messages.find((m) => m.generatedCode === code);
+		const userMessage = message
+			? $chat.messages.find((m) => m.timestamp < message.timestamp && m.role === 'user')
+			: null;
+		const prompt = userMessage?.content || 'Use code from history';
+		const provider = message?.provider || 'unknown';
+
+		onCodeGenerated?.(code, prompt, provider);
 	}
 
 	function handleRefine(messageId: string) {
