@@ -82,14 +82,26 @@
 		reader.onload = () => {
 			try {
 				const json = JSON.parse(String(reader.result || '{}')) as Record<string, unknown>;
-				if (typeof (json as any).__version !== 'number') return;
-				for (const key of Object.keys(json)) {
-					if (key.startsWith('ai-builder:') && typeof (json as any)[key] !== 'undefined') {
-						localStorage.setItem(key, JSON.stringify((json as any)[key]));
+				const version = json.__version;
+				if (typeof version !== 'number' || version !== PERSIST_VERSION) {
+					return; // ignore invalid/mismatched dumps
+				}
+				for (const key of allPersistKeys(PERSIST_VERSION)) {
+					if (Object.prototype.hasOwnProperty.call(json, key)) {
+						const value = json[key];
+						if (typeof value !== 'undefined') {
+							localStorage.setItem(key, JSON.stringify(value));
+						}
+					} else {
+						localStorage.removeItem(key);
 					}
 				}
 				location.reload();
-			} catch {}
+			} catch {
+				// ignore parse errors
+			} finally {
+				input.value = '';
+			}
 		};
 		reader.readAsText(file);
 	}
