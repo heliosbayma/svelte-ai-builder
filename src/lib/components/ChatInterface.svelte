@@ -7,9 +7,10 @@
 	import ChatMessage from './ChatMessage.svelte';
 	import { get } from 'svelte/store';
 	import { createPersistor } from '$lib/utils';
+	import type { LLMProviderType } from '$lib/services/llm';
 
 	interface Props {
-		onCodeGenerated?: (code: string, prompt: string, provider: string) => void;
+		onCodeGenerated?: (code: string, prompt: string, provider: LLMProviderType) => void;
 	}
 
 	let { onCodeGenerated }: Props = $props();
@@ -250,7 +251,7 @@
 			? $chat.messages.find((m) => m.timestamp < message.timestamp && m.role === 'user')
 			: null;
 		const prompt = userMessage?.content || 'Use code from history';
-		const provider = message?.provider || 'unknown';
+		const provider = (message?.provider || 'openai') as LLMProviderType;
 		onCodeGenerated?.(code, prompt, provider);
 	}
 

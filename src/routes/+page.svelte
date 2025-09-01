@@ -9,6 +9,7 @@
 	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
 	import { LAYOUT } from '$lib/constants';
 	import { svelteCompiler, llmClient } from '$lib/services';
+	import type { LLMProviderType } from '$lib/services/llm';
 	import {
 		historyStore,
 		historyCurrentVersion,
@@ -121,7 +122,7 @@
 	async function handleCodeGenerated(
 		code: string,
 		prompt: string = '',
-		provider: string = 'anthropic'
+		provider: LLMProviderType = 'anthropic'
 	): Promise<void> {
 		currentCode = code;
 
@@ -147,7 +148,7 @@
 					const apiKey = (keys as unknown as Record<string, string | null>)[provider] || null;
 					if (apiKey) {
 						const repair = await llmClient.repairComponent(
-							provider as any,
+							provider as typeof provider,
 							apiKey,
 							prompt,
 							code,

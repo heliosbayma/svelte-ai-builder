@@ -4,6 +4,7 @@
 	import { historyStore } from '$lib/stores/history';
 	import { createEventDispatcher } from 'svelte';
 	import { allPersistKeys, PERSIST_VERSION } from '$lib/utils';
+	import { apiKeyStore } from '$lib/stores/apiKeys';
 	const history = historyStore;
 
 	interface Props {
@@ -90,7 +91,6 @@
 				if (typeof version !== 'number' || version !== PERSIST_VERSION) {
 					return; // ignore invalid/mismatched dumps
 				}
-				// summarize counts if available
 				const keys = allPersistKeys(PERSIST_VERSION);
 				const historyKey = keys.find((k) => k.includes(':history:')) || '';
 				const chatKey = keys.find((k) => k.includes(':chat:')) || '';
@@ -172,13 +172,6 @@
 		<Button variant={showCode ? 'default' : 'outline'} size="sm" onclick={onToggleCode}>
 			{showCode ? 'Hide' : 'Show'} Code
 		</Button>
-		<Button variant="ghost" size="sm" onclick={openApiKeySettings}>API Keys</Button>
-		<Button
-			variant={showMetrics ? 'default' : 'ghost'}
-			size="sm"
-			onclick={onToggleMetrics}
-			aria-pressed={showMetrics ? 'true' : 'false'}>Metrics</Button
-		>
 		<div class="relative">
 			<Button
 				variant="ghost"
@@ -203,7 +196,7 @@
 						onclick={() => {
 							exportSession();
 							showSessionMenu = false;
-						}}>Export</button
+						}}>Export Session</button
 					>
 					<button
 						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
@@ -211,15 +204,40 @@
 						onclick={() => {
 							triggerImport();
 							showSessionMenu = false;
-						}}>Import</button
+						}}>Import Session</button
 					>
 					<button
 						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
 						role="menuitem"
 						onclick={() => {
+							openApiKeySettings();
+							showSessionMenu = false;
+						}}>API Keys…</button
+					>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
+						role="menuitem"
+						onclick={() => {
+							onToggleMetrics?.();
+							showSessionMenu = false;
+						}}>{showMetrics ? 'Hide Metrics…' : 'Show Metrics…'}</button
+					>
+					<hr class="my-1 opacity-60" />
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded text-red-600"
+						role="menuitem"
+						onclick={() => {
+							if (confirm('Clear API keys from this browser?')) apiKeyStore.clear();
+							showSessionMenu = false;
+						}}>Clear API Keys</button
+					>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded text-red-600"
+						role="menuitem"
+						onclick={() => {
 							clearSession();
 							showSessionMenu = false;
-						}}>Clear</button
+						}}>Clear Session</button
 					>
 				</div>
 			{/if}
