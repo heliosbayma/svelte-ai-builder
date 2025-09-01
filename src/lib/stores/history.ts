@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { createPersistor } from '$lib/utils';
 
-export const HISTORY_MAX_VERSIONS = 50;
+export const HISTORY_MAX_VERSIONS = 50; // rolling window cap to limit memory/storage
 
 export interface ComponentVersion {
 	id: string;

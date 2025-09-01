@@ -1,11 +1,13 @@
 <script lang="ts">
+	// Preview runtime (iframe):
+	// - Purpose: safely run untrusted, compiled Svelte in a sandbox
+	// - Globals: expose "$" and "svelte_internal" so compiled output can access the runtime
+	// - Mount order (fallbacks): svelte.mount → svelteClient.mount → function(target, props) → new Component({ target, props })
+	// - Props: always pass {} to avoid undefined prop lookups
+	// - Styles: inject provided CSS string into <style> before mounting
 	// @ts-ignore - internal client has no public types
 	import * as svelteClient from 'svelte/internal/client';
 	import { onMount, mount as svelteMount } from 'svelte';
-
-	// Expose Svelte internals to evaluated code
-	// The compiled output expects a `$` namespace from svelte/internal/client
-	// We keep this page minimal and only handle mounting messages.
 
 	let appEl: HTMLDivElement | null = null;
 

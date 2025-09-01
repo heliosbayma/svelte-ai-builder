@@ -129,7 +129,6 @@
 		<span class="text-sm text-muted-foreground">v1.0.0</span>
 	</section>
 	<nav class="flex items-center gap-2">
-		<!-- History controls -->
 		<div class="flex items-center gap-1 border-r pr-2 mr-2">
 			<Button
 				variant="ghost"

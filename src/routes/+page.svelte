@@ -32,13 +32,13 @@
 	let diffOps = $state<DiffOp[]>([]);
 	let showMetrics = $state(false);
 
-	// UI state persistence
+	// Persist UI panel visibility and sizes (browser-only, throttled)
 	const uiPersist = createPersistor<{ showCode: boolean; preview: number; code: number }>({
 		key: 'ui',
 		version: 1
 	});
 
-	// Load UI state
+	// One-time restore of UI state; prevent immediate re-save
 	let uiLoaded = false;
 	$effect(() => {
 		if (uiLoaded) return;
@@ -53,12 +53,13 @@
 		uiLoaded = true;
 	});
 
-	// Save UI state on change
+	// Save UI state only after initial restore completes
 	$effect(() => {
 		if (!uiLoaded) return;
 		uiPersist.save({ showCode, preview: savedPreviewSize, code: savedCodeSize });
 	});
 
+	// Minimal LCS-based line diff (not word-level); optimized for readability over speed
 	function diffLines(a: string, b: string): DiffOp[] {
 		const aLines = a.split('\n');
 		const bLines = b.split('\n');
