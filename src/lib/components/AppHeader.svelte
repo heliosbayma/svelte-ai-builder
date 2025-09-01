@@ -281,7 +281,12 @@
 											>current</span
 										>
 									</div>
-									<div class="text-sm line-clamp-2">{v.prompt}</div>
+									<div class="text-sm line-clamp-2">
+										{#if v.label}
+											<strong class="mr-1">{v.label}:</strong>
+										{/if}
+										{v.prompt}
+									</div>
 								</button>
 							{:else}
 								<button
@@ -293,7 +298,33 @@
 									<div class="text-xs text-muted-foreground flex items-center gap-2">
 										<span>{new Date(v.timestamp).toLocaleTimeString()}</span>
 									</div>
-									<div class="text-sm line-clamp-2">{v.prompt}</div>
+									<div class="text-sm line-clamp-2 flex items-center gap-2">
+										<span>
+											{#if v.label}
+												<strong class="mr-1">{v.label}:</strong>
+											{/if}
+											{v.prompt}
+										</span>
+										<span
+											role="button"
+											tabindex="0"
+											class="text-[10px] px-2 py-0.5 border rounded hover:bg-muted cursor-pointer"
+											onclick={(e) => {
+												e.stopPropagation();
+												const name = prompt('Label this version:', v.label || '');
+												if (name != null)
+													history.updateCurrentVersion({ label: name.trim() || undefined });
+											}}
+											onkeydown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ') {
+													e.preventDefault();
+													const name = prompt('Label this version:', v.label || '');
+													if (name != null)
+														history.updateCurrentVersion({ label: name.trim() || undefined });
+												}
+											}}>Rename</span
+										>
+									</div>
 								</button>
 							{/if}
 						</li>

@@ -13,11 +13,30 @@ const defaultKeys: ApiKeys = {
 	gemini: null
 };
 
+type StorageMode = 'local' | 'session';
+const MODE_KEY = 'ai-builder-api-keys:mode';
+
+function readMode(): StorageMode {
+	if (!browser) return 'local';
+	const m = localStorage.getItem(MODE_KEY);
+	return m === 'session' ? 'session' : 'local';
+}
+
+function writeMode(mode: StorageMode) {
+	if (!browser) return;
+	localStorage.setItem(MODE_KEY, mode);
+}
+
+function getStorage(mode: StorageMode) {
+	return mode === 'session' ? sessionStorage : localStorage;
+}
+
 function loadKeys(): ApiKeys {
 	if (!browser) return defaultKeys;
 
 	try {
-		const stored = localStorage.getItem('ai-builder-api-keys');
+		const mode = readMode();
+		const stored = getStorage(mode).getItem('ai-builder-api-keys');
 		if (!stored) return defaultKeys;
 
 		const parsed = JSON.parse(stored);
@@ -33,12 +52,13 @@ function loadKeys(): ApiKeys {
 
 function createApiKeyStore() {
 	const { subscribe, set, update } = writable<ApiKeys>(loadKeys());
+	let mode: StorageMode = readMode();
 
 	return {
 		subscribe,
 		set: (keys: ApiKeys) => {
 			if (browser) {
-				localStorage.setItem('ai-builder-api-keys', JSON.stringify(keys));
+				getStorage(mode).setItem('ai-builder-api-keys', JSON.stringify(keys));
 			}
 			set(keys);
 		},
@@ -46,16 +66,40 @@ function createApiKeyStore() {
 			update((keys) => {
 				const newKeys = updater(keys);
 				if (browser) {
-					localStorage.setItem('ai-builder-api-keys', JSON.stringify(newKeys));
+					getStorage(mode).setItem('ai-builder-api-keys', JSON.stringify(newKeys));
 				}
 				return newKeys;
 			});
 		},
 		clear: () => {
 			if (browser) {
-				localStorage.removeItem('ai-builder-api-keys');
+				try {
+					localStorage.removeItem('ai-builder-api-keys');
+				} catch {
+					/* ignore */
+				}
+				try {
+					sessionStorage.removeItem('ai-builder-api-keys');
+				} catch {
+					/* ignore */
+				}
 			}
 			set(defaultKeys);
+		},
+		getStorageMode: (): StorageMode => mode,
+		setStorageMode: (next: StorageMode) => {
+			if (!browser) return;
+			const current = loadKeys();
+			mode = next;
+			writeMode(next);
+			try {
+				getStorage(mode).setItem('ai-builder-api-keys', JSON.stringify(current));
+				const other = mode === 'session' ? localStorage : sessionStorage;
+				other.removeItem('ai-builder-api-keys');
+			} catch {
+				/* ignore */
+			}
+			set(current);
 		}
 	};
 }

@@ -11,6 +11,7 @@ export interface ComponentVersion {
 	prompt: string;
 	code: string;
 	provider: string;
+	label?: string;
 	compiledJs?: string;
 	compiledCss?: string;
 	previewHtml?: string;
@@ -39,7 +40,8 @@ function createHistoryStore() {
 				timestamp: v.timestamp,
 				prompt: v.prompt,
 				code: v.code,
-				provider: v.provider
+				provider: v.provider,
+				label: v.label
 			})),
 			currentIndex: s.currentIndex
 		}),
@@ -53,7 +55,8 @@ function createHistoryStore() {
 					timestamp: typeof v.timestamp === 'number' ? v.timestamp : Date.now(),
 					prompt: String(v.prompt ?? ''),
 					code: String(v.code ?? ''),
-					provider: String(v.provider ?? 'unknown')
+					provider: String(v.provider ?? 'unknown'),
+					label: v.label ? String(v.label) : undefined
 				}));
 			return {
 				versions: trimmed,

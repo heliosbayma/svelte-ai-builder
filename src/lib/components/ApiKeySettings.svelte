@@ -28,12 +28,16 @@
 	let keys = $state<ApiKeys>({ openai: null, anthropic: null, gemini: null });
 	let errors = $state<Record<keyof ApiKeys, string>>({ openai: '', anthropic: '', gemini: '' });
 	let modalRef = $state<HTMLDivElement>();
+	let storageMode = $state<'local' | 'session'>('local');
 
 	// Load keys when modal opens
 	$effect(() => {
 		if (isOpen && modalRef) {
 			keys = { ...$apiKeyStore };
 			errors = { openai: '', anthropic: '', gemini: '' };
+			try {
+				storageMode = apiKeyStore.getStorageMode();
+			} catch {}
 			// Focus the modal for keyboard events
 			modalRef.focus();
 		}
@@ -102,6 +106,11 @@
 		apiKeyStore.clear();
 	}
 
+	function handleStorageChange(mode: 'local' | 'session') {
+		storageMode = mode;
+		apiKeyStore.setStorageMode(mode);
+	}
+
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
 			onClose();
@@ -130,6 +139,32 @@
 			</CardHeader>
 
 			<CardContent class="space-y-4">
+				<div class="flex items-center justify-between">
+					<Label class="text-sm">Storage mode</Label>
+					<div class="flex items-center gap-2">
+						<label class="text-xs flex items-center gap-1">
+							<input
+								type="radio"
+								name="storage"
+								value="local"
+								checked={storageMode === 'local'}
+								onchange={() => handleStorageChange('local')}
+							/>
+							Local (persists across tabs)
+						</label>
+						<label class="text-xs flex items-center gap-1">
+							<input
+								type="radio"
+								name="storage"
+								value="session"
+								checked={storageMode === 'session'}
+								onchange={() => handleStorageChange('session')}
+							/>
+							Session-only
+						</label>
+					</div>
+				</div>
+
 				{#each LLM_PROVIDERS as provider (provider.key)}
 					<div class="space-y-2">
 						<Label for={provider.key + '-key'} class="flex items-center gap-2">
