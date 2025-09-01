@@ -77,8 +77,7 @@ export class SvelteCompiler {
 		source = source.replace(/interface\s*\{/g, 'interface Props {');
 		source = source.replace(/^\s*Props\s*\{/gm, 'interface Props {'); // Fix "Props {" -> "interface Props {"
 
-		// Fix common TypeScript syntax errors - remove stray closing braces
-		source = source.replace(/^\s*\}\s*$/gm, '');
+		// Do not remove closing braces; earlier heuristics caused valid code to break
 
 		// Ensure the code starts with <script> if it has script content
 		if (
@@ -112,11 +111,10 @@ export class SvelteCompiler {
 		// Clean up script tag issues
 		source = source.replace(/^<script[^>]*>\s*\n\s*\}/gm, '<script lang="ts">');
 
-		// Preflight: if <script> is clearly unclosed or braces unbalanced, shortcut to smart template
+		// Preflight: if <script> is clearly unclosed, shortcut to smart template
 		const scriptOpenCount = (source.match(/<script\b/gi) || []).length;
 		const scriptCloseCount = (source.match(/<\/script>/gi) || []).length;
-		const braceDelta = (source.match(/\{/g) || []).length - (source.match(/\}/g) || []).length;
-		if (scriptOpenCount !== scriptCloseCount || Math.abs(braceDelta) > 0) {
+		if (scriptOpenCount !== scriptCloseCount) {
 			console.log('Preflight failed (unbalanced tags/braces). Using smart template.');
 			return this.createSimpleTemplate(source);
 		}

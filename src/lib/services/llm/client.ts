@@ -60,6 +60,7 @@ export class LLMClient {
 		const model = options.model || DEFAULT_MODELS[provider];
 
 		try {
+			const t0 = performance.now();
 			const response = await this.makeRequest(
 				provider,
 				apiKey,
@@ -70,7 +71,15 @@ export class LLMClient {
 				options
 			);
 			const data = await response.json();
-			return this.parseResponse(provider, data);
+			const parsed = this.parseResponse(provider, data);
+			const t1 = performance.now();
+			console.info('LLM telemetry', {
+				provider,
+				model,
+				ms: Math.round(t1 - t0),
+				usage: parsed.usage
+			});
+			return parsed;
 		} catch (error) {
 			if (error instanceof Error && error.name === 'AbortError') {
 				throw new Error('Request cancelled');

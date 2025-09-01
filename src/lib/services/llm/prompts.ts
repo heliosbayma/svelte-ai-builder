@@ -90,15 +90,16 @@ export function createBuildFromPlanPrompt(planJson: string): string {
 PLAN JSON:
 ${planJson}
 
-MAPPING RULES (must follow):
-- Use plan.sections to populate TopNav, Hero, CardGrid. Do not invent extra sections.
-- For TopNav: render logoText and links.
-- For Hero: render title/subtitle/primaryCta/secondaryCta?/imageUrl?.
-- For CardGrid: render columns and cards exactly from plan.
-- Add minimal interactivity: let cartCount = $state(0); function addToCart(){ cartCount += 1 }
-- All event handlers MUST be named functions (e.g., handlePrimary) and called via onclick={handlePrimary}.
-- Include interface Props { title?: string } and destructure via $props().
-- Use Tailwind v4 classes; no external scripts or legacy syntax.
+LAYOUT RULES (must follow):
+- Stack sections vertically in this exact order: TopNav -> Hero -> CardGrid. Each section spans full width.
+- Wrap each section body with a centered container: max-w-7xl mx-auto px-4.
+- Hero uses two columns on md+ (text, image). CardGrid is below Hero.
+- Use a responsive grid for cards (no inline styles). See helper gridCols().
+
+MAPPING RULES:
+- Map TopNav.logoText/links, Hero.title/subtitle/primaryCta/secondaryCta?/imageUrl?, and CardGrid.columns/cards exactly.
+- Add minimal interactivity: let cartCount = $state(0); function addToCart(){ cartCount += 1 }.
+- Named handlers only, Tailwind v4 classes, runes, and Props as per DoD.
 
 SCAFFOLD (adapt; keep concise):
 <script lang="ts">
@@ -110,50 +111,60 @@ function handlePrimary() {}
 function handleSecondary() {}
 const links = [] as Array<{label:string;href:string}>;
 const cards = [] as Array<{title:string;price?:string;imageUrl?:string;badge?:string}>;
-const columns = 3;
+let columns = 3;
 const hero = { title: '', subtitle: '', primaryCta: '', secondaryCta: '', imageUrl: '' };
 function placeholder(seed: string, w = 640, h = 360) { return \`https://picsum.photos/seed/\${encodeURIComponent(seed)}/\${w}/\${h}\`; }
 function safeImage(url?: string | null, seed = 'image', w = 640, h = 360) {
   if (!url || /^url_to_/i.test(url)) return placeholder(seed, w, h);
   try { const u = new URL(url); return u.protocol.startsWith('http') ? url : placeholder(seed, w, h); } catch { return placeholder(seed, w, h); }
 }
+function gridCols(n: number): string {
+  if (n <= 1) return 'grid-cols-1';
+  if (n === 2) return 'grid-cols-1 sm:grid-cols-2';
+  if (n === 3) return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3';
+  return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+}
 </script>
 
-<nav class="flex items-center justify-between px-4 h-14 bg-background text-foreground">
-  <div class="font-bold">{title}</div>
-  <div class="flex items-center gap-4">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary">{l.label}</a>{/each}</div>
-  <div class="text-sm">Cart: {cartCount}</div>
-</nav>
+<header class="sticky top-0 z-50 bg-background/80 backdrop-blur border-b supports-[backdrop-filter]:bg-background/60">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-6">
+    <div class="font-bold">{title}</div>
+    <nav class="flex items-center gap-6">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary">{l.label}</a>{/each}</nav>
+    <div class="text-sm">Cart: {cartCount}</div>
+  </div>
+</header>
 
-<section class="relative overflow-hidden py-16 bg-gradient-to-br from-primary/10 to-blue-500/10">
-  <div class="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+<section class="w-full pt-12 md:pt-16 bg-gradient-to-b from-muted/30 to-transparent">
+  <div class="max-w-7xl mx-auto px-4 grid gap-10 md:grid-cols-[1.2fr_0.8fr] items-center">
     <div>
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">{hero.title}</h1>
-      {#if hero.subtitle}<p class="text-muted-foreground mb-6">{hero.subtitle}</p>{/if}
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">{hero.title}</h1>
+      {#if hero.subtitle}<p class="text-muted-foreground mb-6 max-w-prose">{hero.subtitle}</p>{/if}
       <div class="flex gap-3">
         {#if hero.primaryCta}<button class="px-4 py-2 rounded-md bg-primary text-primary-foreground" onclick={handlePrimary}>{hero.primaryCta}</button>{/if}
         {#if hero.secondaryCta}<button class="px-4 py-2 rounded-md border" onclick={handleSecondary}>{hero.secondaryCta}</button>{/if}
       </div>
     </div>
-    <img src={safeImage(hero.imageUrl, hero.title, 720, 480)} alt="" class="rounded-lg shadow-md" />
+    <img src={safeImage(hero.imageUrl, hero.title, 960, 540)} alt="" class="w-full h-[320px] md:h-[420px] object-cover rounded-xl shadow-md" />
   </div>
 </section>
 
-<section class="container mx-auto px-4 py-12">
-  <div class="grid gap-6" style={\`grid-template-columns: repeat(\${columns}, minmax(0,1fr));\`}>
-    {#each cards as c (c.title)}
-      <article class="bg-card text-card-foreground rounded-lg border overflow-hidden">
-        <img src={safeImage(c.imageUrl, c.title, 480, 240)} alt="" class="w-full h-40 object-cover" />
-        <div class="p-4">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold">{c.title}</h3>
-            {#if c.badge}<span class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white">{c.badge}</span>{/if}
+<section class="py-12">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class={\`grid gap-8 \${gridCols(columns)}\`}>
+      {#each cards as c (c.title)}
+        <article class="bg-card text-card-foreground rounded-xl border overflow-hidden shadow-sm">
+          <img src={safeImage(c.imageUrl, c.title, 640, 360)} alt="" class="w-full h-48 object-cover" />
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold">{c.title}</h3>
+              {#if c.badge}<span class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white">{c.badge}</span>{/if}
+            </div>
+            {#if c.price}<p class="text-sm text-muted-foreground">{c.price}</p>{/if}
+            <button class="mt-3 px-3 py-1.5 bg-green-600 text-white rounded-md" onclick={addToCart}>Add to Cart</button>
           </div>
-          {#if c.price}<p class="text-sm text-muted-foreground">{c.price}</p>{/if}
-          <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded" onclick={addToCart}>Add to Cart</button>
-        </div>
-      </article>
-    {/each}
+        </article>
+      {/each}
+    </div>
   </div>
 </section>`;
 }

@@ -16,6 +16,7 @@
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
 	let pendingPlan = $state('');
+	let modelInput = $state('');
 
 	// Subscribe to chat store
 	const chat = chatStore;
@@ -89,7 +90,12 @@
 
 			const response = await llmClient.generateComponent(
 				prompt,
-				{ provider, apiKey: apiKeys[provider]!, signal: new AbortController().signal },
+				{
+					provider,
+					apiKey: apiKeys[provider]!,
+					model: modelInput || undefined,
+					signal: new AbortController().signal
+				},
 				previousCode
 			);
 
@@ -119,23 +125,42 @@
 		const provider =
 			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
 		chatStore.addMessage({ role: 'user', content: `PLAN: ${prompt}` });
-		const res = await llmClient.planPage(prompt, { provider, apiKey: apiKeys[provider]! });
-		let raw = res.content?.trim() || '';
-		// Strip fences if provider ignores instruction
-		raw = raw
-			.replace(/^```[a-zA-Z]*\n?/, '')
-			.replace(/```$/, '')
-			.trim();
 		try {
+			const res = await llmClient.planPage(prompt, {
+				provider,
+				apiKey: apiKeys[provider]!,
+				model: modelInput || undefined
+			});
+			let raw = res.content?.trim() || '';
+			raw = raw
+				.replace(/^```[a-zA-Z]*\n?/, '')
+				.replace(/```$/, '')
+				.trim();
 			JSON.parse(raw);
 			pendingPlan = raw;
 			chatStore.addMessage({ role: 'assistant', content: pendingPlan });
-		} catch {
-			pendingPlan = '';
+		} catch (err) {
 			chatStore.addMessage({
 				role: 'assistant',
-				content: 'Plan failed to produce valid JSON. Please try again or refine your request.'
+				content: 'Plan failed with selected model. Retrying with default model…'
 			});
+			try {
+				const res2 = await llmClient.planPage(prompt, { provider, apiKey: apiKeys[provider]! });
+				let raw2 = res2.content?.trim() || '';
+				raw2 = raw2
+					.replace(/^```[a-zA-Z]*\n?/, '')
+					.replace(/```$/, '')
+					.trim();
+				JSON.parse(raw2);
+				pendingPlan = raw2;
+				chatStore.addMessage({ role: 'assistant', content: pendingPlan });
+			} catch {
+				pendingPlan = '';
+				chatStore.addMessage({
+					role: 'assistant',
+					content: 'Plan failed. Please try again or pick another model.'
+				});
+			}
 		}
 	}
 
@@ -145,12 +170,33 @@
 		const provider =
 			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
 		chatStore.addMessage({ role: 'user', content: 'BUILD FROM PLAN' });
-		const res = await llmClient.buildPageFromPlan(pendingPlan, {
-			provider,
-			apiKey: apiKeys[provider]!
-		});
-		chatStore.addMessage({ role: 'assistant', content: res.content });
-		onCodeGenerated?.(res.content, 'Build from plan', provider);
+		try {
+			const res = await llmClient.buildPageFromPlan(pendingPlan, {
+				provider,
+				apiKey: apiKeys[provider]!,
+				model: modelInput || undefined
+			});
+			chatStore.addMessage({ role: 'assistant', content: res.content });
+			onCodeGenerated?.(res.content, 'Build from plan', provider);
+		} catch (err) {
+			chatStore.addMessage({
+				role: 'assistant',
+				content: 'Build failed with selected model. Retrying with default model…'
+			});
+			try {
+				const res2 = await llmClient.buildPageFromPlan(pendingPlan, {
+					provider,
+					apiKey: apiKeys[provider]!
+				});
+				chatStore.addMessage({ role: 'assistant', content: res2.content });
+				onCodeGenerated?.(res2.content, 'Build from plan', provider);
+			} catch {
+				chatStore.addMessage({
+					role: 'assistant',
+					content: 'Build failed. Please try again or pick another model.'
+				});
+			}
+		}
 	}
 
 	function handleUseCode(code: string) {
@@ -239,7 +285,7 @@
 						aria-label="Cancel generation request">Cancel</Button
 					>
 				{:else}
-					<div class="flex gap-2">
+					<div class="flex gap-2 items-center">
 						<Button
 							type="submit"
 							disabled={!currentPrompt.trim()}
@@ -253,6 +299,28 @@
 							disabled={!pendingPlan || $chat.isGenerating}
 							aria-label="Build from plan">Build</Button
 						>
+						<select
+							class="h-9 px-2 text-sm border rounded-md bg-background"
+							bind:value={modelInput}
+							aria-label="Model override"
+						>
+							<option value="">Auto (default)</option>
+							<optgroup label="OpenAI">
+								<option value="gpt-5">gpt-5</option>
+								<option value="gpt-4o-mini">gpt-4o-mini</option>
+								<option value="gpt-4o">gpt-4o</option>
+								<option value="gpt-4.1-mini">gpt-4.1-mini</option>
+							</optgroup>
+							<optgroup label="Anthropic">
+								<option value="claude-4-sonnet">claude-4-sonnet</option>
+								<option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
+								<option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
+							</optgroup>
+							<optgroup label="Gemini">
+								<option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest</option>
+								<option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
+							</optgroup>
+						</select>
 					</div>
 				{/if}
 			</div>
