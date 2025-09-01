@@ -44,7 +44,6 @@
 		provider: string = 'anthropic'
 	): Promise<void> {
 		currentCode = code;
-		showCode = true;
 
 		try {
 			console.log('Compiling code:', code);
@@ -185,7 +184,6 @@
 			previewHtml = current.previewHtml || '';
 			compiledJs = current.compiledJs || '';
 			compiledCss = current.compiledCss || '';
-			showCode = true;
 		}
 	}
 
