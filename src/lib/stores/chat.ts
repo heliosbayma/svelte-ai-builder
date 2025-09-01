@@ -32,7 +32,14 @@ function createChatStore() {
 		key: 'chat',
 		version: 1,
 		serialize: (s) => ({
-			messages: s.messages.map((m) => ({ ...m, streaming: false })),
+			// Do not persist generatedCode or streaming to avoid duplication with history and transient flags
+			messages: s.messages.map((m) => ({
+				id: m.id,
+				role: m.role,
+				content: m.content,
+				timestamp: m.timestamp,
+				provider: m.provider
+			})),
 			isGenerating: false,
 			currentProvider: null,
 			currentRequestId: null
@@ -41,7 +48,14 @@ function createChatStore() {
 			const r = raw as Partial<ChatState> | null;
 			if (!r || !Array.isArray(r.messages)) return null;
 			return {
-				messages: r.messages.slice(-200),
+				// Ensure generatedCode is not restored from persistence
+				messages: r.messages.slice(-200).map((m: Partial<ChatMessage>) => ({
+					id: String(m.id),
+					role: (m.role ?? 'assistant') as ChatMessage['role'],
+					content: String(m.content ?? ''),
+					timestamp: typeof m.timestamp === 'number' ? m.timestamp : Date.now(),
+					provider: m.provider
+				})),
 				isGenerating: false,
 				currentProvider: null,
 				currentRequestId: null

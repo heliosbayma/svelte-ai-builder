@@ -9,7 +9,13 @@
 	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
 	import { LAYOUT } from '$lib/constants';
 	import { svelteCompiler, llmClient } from '$lib/services';
-	import { historyStore } from '$lib/stores/history';
+	import {
+		historyStore,
+		historyCurrentVersion,
+		historyCanUndo,
+		historyCanRedo,
+		historyPreviousVersion
+	} from '$lib/stores/history';
 	import { apiKeyStore } from '$lib/stores/apiKeys';
 	import { get } from 'svelte/store';
 	import { createPersistor, compiledCache } from '$lib/utils';
@@ -248,7 +254,7 @@
 	}
 
 	function loadCurrentVersion(): void {
-		const current = historyStore.getCurrentVersion();
+		const current = $historyCurrentVersion;
 		if (current) {
 			currentCode = current.code;
 			const cached = compiledCache.get(current.id);
@@ -284,14 +290,13 @@
 	// Watch for history changes to update UI
 	$effect(() => {
 		// This will reactively update when history changes
-		const current = $history.versions[$history.currentIndex];
+		const current = $historyCurrentVersion;
 		if (current && current.code !== currentCode) {
 			loadCurrentVersion();
 		}
 
 		// Track previous code for diff
-		previousCode =
-			$history.currentIndex > 0 ? $history.versions[$history.currentIndex - 1]?.code || '' : '';
+		previousCode = $historyPreviousVersion?.code || '';
 	});
 
 	// Recompute diff ops whenever codes change
@@ -320,8 +325,8 @@
 	<AppHeader
 		{showCode}
 		onToggleCode={toggleCode}
-		canUndo={$history.currentIndex > 0}
-		canRedo={$history.currentIndex < $history.versions.length - 1}
+		canUndo={$historyCanUndo}
+		canRedo={$historyCanRedo}
 		onUndo={handleUndo}
 		onRedo={handleRedo}
 		{showMetrics}

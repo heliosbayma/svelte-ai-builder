@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { createPersistor } from '$lib/utils';
 
 export const HISTORY_MAX_VERSIONS = 50; // rolling window cap to limit memory/storage
@@ -189,3 +189,14 @@ function createHistoryStore() {
 }
 
 export const historyStore = createHistoryStore();
+
+// Derived selectors for convenience in components
+export const historyCurrentVersion = derived(
+	historyStore,
+	(s) => s.versions[s.currentIndex] || null
+);
+export const historyCanUndo = derived(historyStore, (s) => s.currentIndex > 0);
+export const historyCanRedo = derived(historyStore, (s) => s.currentIndex < s.versions.length - 1);
+export const historyPreviousVersion = derived(historyStore, (s) =>
+	s.currentIndex > 0 ? s.versions[s.currentIndex - 1] || null : null
+);
