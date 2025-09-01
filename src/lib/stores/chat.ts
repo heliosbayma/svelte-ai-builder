@@ -51,6 +51,8 @@ function createChatStore() {
 
 	const restored = persist.load(initialState);
 	const { subscribe, set, update } = writable(restored);
+	// Non-persisted map for in-flight request controllers
+	const controllers = new Map<string, AbortController>();
 
 	return {
 		subscribe,
@@ -95,8 +97,35 @@ function createChatStore() {
 			});
 		},
 
+		registerRequest: (requestId: string, controller: AbortController) => {
+			controllers.set(requestId, controller);
+		},
+
+		abortCurrent: () => {
+			update((state) => {
+				const id = state.currentRequestId;
+				if (id && controllers.has(id)) {
+					try {
+						controllers.get(id)?.abort();
+					} catch {
+						// ignore
+					}
+					controllers.delete(id);
+				}
+				const next = {
+					...state,
+					isGenerating: false,
+					currentProvider: null,
+					currentRequestId: null
+				};
+				persist.save(next);
+				return next;
+			});
+		},
+
 		stopGeneration: () => {
 			update((state) => {
+				if (state.currentRequestId) controllers.delete(state.currentRequestId);
 				const next = {
 					...state,
 					isGenerating: false,

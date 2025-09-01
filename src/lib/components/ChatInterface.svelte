@@ -88,19 +88,23 @@
 			const versions = chatStore.getComponentVersions();
 			const previousCode = versions[versions.length - 1]?.code;
 
+			const controller = new AbortController();
+			chatStore.registerRequest(requestId, controller);
 			const response = await llmClient.generateComponent(
 				prompt,
 				{
 					provider,
 					apiKey: apiKeys[provider]!,
 					model: modelInput || undefined,
-					signal: new AbortController().signal,
+					signal: controller.signal,
 					purpose: 'generate'
 				},
 				previousCode
 			);
 
 			console.log('LLM generation completed:', response);
+			// Guard late results for canceled/replaced requests
+			if ($chat.currentRequestId !== requestId) return;
 			chatStore.updateMessage(assistantMessageId, {
 				content: response.content,
 				generatedCode: response.content,
@@ -240,9 +244,7 @@
 	}
 
 	function handleCancel() {
-		if ($chat.currentRequestId) {
-			chatStore.stopGeneration();
-		}
+		chatStore.abortCurrent();
 	}
 </script>
 

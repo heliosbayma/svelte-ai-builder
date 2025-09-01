@@ -12,9 +12,8 @@
 	import { historyStore } from '$lib/stores/history';
 	import { apiKeyStore } from '$lib/stores/apiKeys';
 	import { get } from 'svelte/store';
-	import { createPersistor } from '$lib/utils';
+	import { createPersistor, compiledCache } from '$lib/utils';
 
-	// State
 	let showCode = $state(false);
 	let savedPreviewSize: number = $state(LAYOUT.PREVIEW_SIZE_DEFAULT as number);
 	let savedCodeSize: number = $state(LAYOUT.CODE_SIZE_DEFAULT as number);
@@ -157,14 +156,12 @@
 								previewHtml = '';
 								currentCode = repair.content;
 								// Add repaired version and stop early
-								historyStore.addVersion({
+								const vid = historyStore.addVersion({
 									prompt: `${prompt} (repaired)`,
 									code: repair.content,
-									provider,
-									compiledJs,
-									compiledCss,
-									previewHtml: ''
+									provider
 								});
+								compiledCache.set(vid, { js: compiledJs, css: compiledCss, html: '' });
 								return;
 							}
 						}
@@ -200,15 +197,13 @@
 			previewHtml = generatedPreviewHtml;
 			// Update state variables so PreviewPanel receives the compiled code
 
-			// Add to history
-			historyStore.addVersion({
+			// Add to history (persist minimal) and cache compiled output in-memory
+			const vid = historyStore.addVersion({
 				prompt,
 				code,
-				provider,
-				compiledJs,
-				compiledCss,
-				previewHtml: generatedPreviewHtml
+				provider
 			});
+			compiledCache.set(vid, { js: compiledJs, css: compiledCss, html: generatedPreviewHtml });
 		} catch (error) {
 			console.error('Failed to compile:', error);
 			const errorHtml = `
@@ -225,13 +220,13 @@
 			compiledJs = '';
 			compiledCss = '';
 
-			// Still add failed versions to history for debugging
-			historyStore.addVersion({
+			// Still add failed versions to history (persist minimal) and cache error HTML
+			const vid = historyStore.addVersion({
 				prompt,
 				code,
-				provider,
-				previewHtml: errorHtml
+				provider
 			});
+			compiledCache.set(vid, { js: '', css: '', html: errorHtml });
 		}
 	}
 
@@ -256,9 +251,27 @@
 		const current = historyStore.getCurrentVersion();
 		if (current) {
 			currentCode = current.code;
-			previewHtml = current.previewHtml || '';
-			compiledJs = current.compiledJs || '';
-			compiledCss = current.compiledCss || '';
+			const cached = compiledCache.get(current.id);
+			if (cached) {
+				compiledJs = cached.js;
+				compiledCss = cached.css || '';
+				previewHtml = cached.html || '';
+			} else {
+				// Lazy recompile
+				svelteCompiler.compile(current.code).then((res) => {
+					if (res.error) {
+						compiledJs = '';
+						compiledCss = '';
+						previewHtml = res.error.message;
+						compiledCache.set(current.id, { js: '', css: '', html: previewHtml });
+					} else {
+						compiledJs = res.js;
+						compiledCss = res.css || '';
+						previewHtml = '';
+						compiledCache.set(current.id, { js: compiledJs, css: compiledCss, html: '' });
+					}
+				});
+			}
 		}
 	}
 

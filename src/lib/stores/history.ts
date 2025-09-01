@@ -30,13 +30,31 @@ function createHistoryStore() {
 	const persist = createPersistor<HistoryState>({
 		key: 'history',
 		version: 1,
-		serialize: (s) => ({ versions: s.versions, currentIndex: s.currentIndex }),
+		serialize: (s) => ({
+			versions: s.versions.map((v) => ({
+				id: v.id,
+				timestamp: v.timestamp,
+				prompt: v.prompt,
+				code: v.code,
+				provider: v.provider
+			})),
+			currentIndex: s.currentIndex
+		}),
 		deserialize: (raw) => {
 			const r = raw as Partial<HistoryState> | null;
 			if (!r || !Array.isArray(r.versions)) return null;
+			const trimmed = r.versions
+				.slice(0, HISTORY_MAX_VERSIONS)
+				.map((v: Partial<ComponentVersion>) => ({
+					id: String(v.id),
+					timestamp: typeof v.timestamp === 'number' ? v.timestamp : Date.now(),
+					prompt: String(v.prompt ?? ''),
+					code: String(v.code ?? ''),
+					provider: String(v.provider ?? 'unknown')
+				}));
 			return {
-				versions: r.versions.slice(0, HISTORY_MAX_VERSIONS),
-				currentIndex: typeof r.currentIndex === 'number' ? r.currentIndex : r.versions.length - 1,
+				versions: trimmed,
+				currentIndex: typeof r.currentIndex === 'number' ? r.currentIndex : trimmed.length - 1,
 				maxVersions: HISTORY_MAX_VERSIONS
 			};
 		}
