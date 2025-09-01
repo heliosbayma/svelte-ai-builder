@@ -1,10 +1,15 @@
 <script lang="ts">
-	import { telemetryStore, summarize } from '$lib/stores/telemetry';
+	import { telemetryStore, telemetrySummary, telemetryByProvider } from '$lib/stores/telemetry';
 	let open = $state(true);
 	const telemetry = telemetryStore;
 	let stats = $state({ count: 0, avgMs: 0, totalTokens: 0 });
+	let providerSummary: Record<
+		string,
+		{ count: number; avgMs: number; errorRate: number; totalTokens: number }
+	> = $state({});
 	$effect(() => {
-		stats = summarize($telemetry.events);
+		stats = $telemetrySummary;
+		providerSummary = $telemetryByProvider;
 	});
 </script>
 
@@ -22,6 +27,30 @@
 					<div>runs: <span class="text-foreground font-medium">{stats.count}</span></div>
 					<div>avg ms: <span class="text-foreground font-medium">{stats.avgMs}</span></div>
 					<div>tokens: <span class="text-foreground font-medium">{stats.totalTokens}</span></div>
+				</div>
+				<div class="mb-2">
+					<table class="w-full">
+						<thead class="text-[10px] text-muted-foreground">
+							<tr>
+								<th class="text-left pr-2">provider</th>
+								<th class="text-right pr-2">runs</th>
+								<th class="text-right pr-2">avg ms</th>
+								<th class="text-right pr-2">errors</th>
+								<th class="text-right">tokens</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each Object.entries(providerSummary) as [provider, g]}
+								<tr class="border-t">
+									<td class="py-1 pr-2">{provider}</td>
+									<td class="py-1 pr-2 text-right">{g.count}</td>
+									<td class="py-1 pr-2 text-right">{g.avgMs}</td>
+									<td class="py-1 pr-2 text-right">{Math.round(g.errorRate * 100)}%</td>
+									<td class="py-1 text-right">{g.totalTokens}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 				<div class="max-h-56 overflow-auto">
 					<table class="w-full">
