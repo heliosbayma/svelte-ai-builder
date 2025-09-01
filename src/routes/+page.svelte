@@ -12,11 +12,12 @@
 	import { historyStore } from '$lib/stores/history';
 	import { apiKeyStore } from '$lib/stores/apiKeys';
 	import { get } from 'svelte/store';
+	import { createPersistor } from '$lib/utils';
 
 	// State
 	let showCode = $state(false);
-	let savedPreviewSize = $state(LAYOUT.PREVIEW_SIZE_DEFAULT);
-	let savedCodeSize = $state(LAYOUT.CODE_SIZE_DEFAULT);
+	let savedPreviewSize: number = $state(LAYOUT.PREVIEW_SIZE_DEFAULT as number);
+	let savedCodeSize: number = $state(LAYOUT.CODE_SIZE_DEFAULT as number);
 	let currentCode = $state('');
 	let previewHtml = $state('');
 	let compiledJs = $state('');
@@ -29,6 +30,29 @@
 		b?: string;
 	}
 	let diffOps = $state<DiffOp[]>([]);
+
+	// UI state persistence
+	const uiPersist = createPersistor<{ showCode: boolean; preview: number; code: number }>({
+		key: 'ui',
+		version: 1
+	});
+
+	// Load UI state
+	$effect(() => {
+		const restored = uiPersist.load({
+			showCode: false,
+			preview: LAYOUT.PREVIEW_SIZE_DEFAULT,
+			code: LAYOUT.CODE_SIZE_DEFAULT
+		});
+		showCode = restored.showCode;
+		savedPreviewSize = restored.preview;
+		savedCodeSize = restored.code;
+	});
+
+	// Save UI state on change
+	$effect(() => {
+		uiPersist.save({ showCode, preview: savedPreviewSize, code: savedCodeSize });
+	});
 
 	function diffLines(a: string, b: string): DiffOp[] {
 		const aLines = a.split('\n');
