@@ -17,6 +17,7 @@
 	let isAtBottom = $state(true);
 	let pendingPlan = $state('');
 	let modelInput = $state('');
+	let promptVariant = $state<'A' | 'B'>('A');
 
 	// Subscribe to chat store
 	const chat = chatStore;
@@ -94,7 +95,9 @@
 					provider,
 					apiKey: apiKeys[provider]!,
 					model: modelInput || undefined,
-					signal: new AbortController().signal
+					signal: new AbortController().signal,
+					promptVariant,
+					purpose: 'generate'
 				},
 				previousCode
 			);
@@ -129,7 +132,9 @@
 			const res = await llmClient.planPage(prompt, {
 				provider,
 				apiKey: apiKeys[provider]!,
-				model: modelInput || undefined
+				model: modelInput || undefined,
+				promptVariant,
+				purpose: 'plan'
 			});
 			let raw = res.content?.trim() || '';
 			raw = raw
@@ -145,7 +150,12 @@
 				content: 'Plan failed with selected model. Retrying with default model…'
 			});
 			try {
-				const res2 = await llmClient.planPage(prompt, { provider, apiKey: apiKeys[provider]! });
+				const res2 = await llmClient.planPage(prompt, {
+					provider,
+					apiKey: apiKeys[provider]!,
+					promptVariant,
+					purpose: 'plan'
+				});
 				let raw2 = res2.content?.trim() || '';
 				raw2 = raw2
 					.replace(/^```[a-zA-Z]*\n?/, '')
@@ -174,7 +184,9 @@
 			const res = await llmClient.buildPageFromPlan(pendingPlan, {
 				provider,
 				apiKey: apiKeys[provider]!,
-				model: modelInput || undefined
+				model: modelInput || undefined,
+				promptVariant,
+				purpose: 'build'
 			});
 			chatStore.addMessage({ role: 'assistant', content: res.content });
 			onCodeGenerated?.(res.content, 'Build from plan', provider);
@@ -186,7 +198,9 @@
 			try {
 				const res2 = await llmClient.buildPageFromPlan(pendingPlan, {
 					provider,
-					apiKey: apiKeys[provider]!
+					apiKey: apiKeys[provider]!,
+					promptVariant,
+					purpose: 'build'
 				});
 				chatStore.addMessage({ role: 'assistant', content: res2.content });
 				onCodeGenerated?.(res2.content, 'Build from plan', provider);
@@ -299,6 +313,14 @@
 							disabled={!pendingPlan || $chat.isGenerating}
 							aria-label="Build from plan">Build</Button
 						>
+						<select
+							class="h-9 px-2 text-sm border rounded-md bg-background"
+							bind:value={promptVariant}
+							aria-label="Prompt variant"
+						>
+							<option value="A">Prompt A</option>
+							<option value="B">Prompt B</option>
+						</select>
 						<select
 							class="h-9 px-2 text-sm border rounded-md bg-background"
 							bind:value={modelInput}

@@ -7,6 +7,7 @@ import {
 	createBuildFromPlanPrompt
 } from './prompts';
 import { telemetryStore } from '$lib/stores/telemetry';
+import { systemPromptByVariant, buildFromPlanByVariant } from './registry';
 
 // Use internal API route to avoid CORS issues
 const API_ENDPOINT = '/api/llm';
@@ -50,8 +51,8 @@ export class LLMClient {
 	// Build step: produce full page from plan JSON
 	async buildPageFromPlan(planJson: string, options: LLMOptions): Promise<LLMResponse> {
 		const messages: LLMMessage[] = [
-			{ role: 'system', content: SYSTEM_PROMPT },
-			{ role: 'user', content: createBuildFromPlanPrompt(planJson) }
+			{ role: 'system', content: systemPromptByVariant(options.promptVariant || 'A') },
+			{ role: 'user', content: buildFromPlanByVariant(options.promptVariant || 'A', planJson) }
 		];
 		return this.chat(messages, { ...options, purpose: 'build' });
 	}
@@ -86,7 +87,8 @@ export class LLMClient {
 				ms: Math.round(t1 - t0),
 				ok: true,
 				purpose: options.purpose || 'other',
-				usage: parsed.usage
+				usage: parsed.usage,
+				meta: options.promptVariant ? { promptVariant: options.promptVariant } : undefined
 			});
 			return parsed;
 		} catch (error) {
@@ -100,7 +102,8 @@ export class LLMClient {
 				ms: 0,
 				ok: false,
 				purpose: options.purpose || 'other',
-				errorMessage: formatted.message
+				errorMessage: formatted.message,
+				meta: options.promptVariant ? { promptVariant: options.promptVariant } : undefined
 			});
 			throw formatted;
 		}

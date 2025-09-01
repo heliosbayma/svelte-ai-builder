@@ -19,6 +19,7 @@ export interface TelemetryEvent {
 	purpose: TelemetryPurpose;
 	usage?: TelemetryUsage;
 	errorMessage?: string;
+	meta?: Record<string, string | number>;
 }
 
 export interface TelemetryState {
