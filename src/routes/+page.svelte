@@ -38,7 +38,9 @@
 	});
 
 	// Load UI state
+	let uiLoaded = false;
 	$effect(() => {
+		if (uiLoaded) return;
 		const restored = uiPersist.load({
 			showCode: false,
 			preview: LAYOUT.PREVIEW_SIZE_DEFAULT,
@@ -47,10 +49,12 @@
 		showCode = restored.showCode;
 		savedPreviewSize = restored.preview;
 		savedCodeSize = restored.code;
+		uiLoaded = true;
 	});
 
 	// Save UI state on change
 	$effect(() => {
+		if (!uiLoaded) return;
 		uiPersist.save({ showCode, preview: savedPreviewSize, code: savedCodeSize });
 	});
 
