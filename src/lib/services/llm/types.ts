@@ -28,4 +28,5 @@ export interface LLMOptions {
 	maxTokens?: number;
 	signal?: AbortSignal;
 	onStream?: (response: LLMStreamResponse) => void;
+	purpose?: 'generate' | 'plan' | 'build' | 'repair' | 'other';
 }

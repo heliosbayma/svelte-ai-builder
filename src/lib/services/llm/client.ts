@@ -6,6 +6,7 @@ import {
 	PLAN_PROMPT,
 	createBuildFromPlanPrompt
 } from './prompts';
+import { telemetryStore } from '$lib/stores/telemetry';
 
 // Use internal API route to avoid CORS issues
 const API_ENDPOINT = '/api/llm';
@@ -34,7 +35,7 @@ export class LLMClient {
 		if (options.onStream) {
 			return this.streamChat(messages, options);
 		}
-		return this.chat(messages, options);
+		return this.chat(messages, { ...options, purpose: options.purpose || 'generate' });
 	}
 
 	// Plan step: get minimal JSON plan
@@ -43,7 +44,7 @@ export class LLMClient {
 			{ role: 'system', content: PLAN_PROMPT },
 			{ role: 'user', content: prompt }
 		];
-		return this.chat(messages, options);
+		return this.chat(messages, { ...options, purpose: 'plan' });
 	}
 
 	// Build step: produce full page from plan JSON
@@ -52,7 +53,7 @@ export class LLMClient {
 			{ role: 'system', content: SYSTEM_PROMPT },
 			{ role: 'user', content: createBuildFromPlanPrompt(planJson) }
 		];
-		return this.chat(messages, options);
+		return this.chat(messages, { ...options, purpose: 'build' });
 	}
 
 	private async chat(messages: LLMMessage[], options: LLMOptions): Promise<LLMResponse> {
@@ -79,12 +80,29 @@ export class LLMClient {
 				ms: Math.round(t1 - t0),
 				usage: parsed.usage
 			});
+			telemetryStore.add({
+				provider,
+				model,
+				ms: Math.round(t1 - t0),
+				ok: true,
+				purpose: options.purpose || 'other',
+				usage: parsed.usage
+			});
 			return parsed;
 		} catch (error) {
 			if (error instanceof Error && error.name === 'AbortError') {
 				throw new Error('Request cancelled');
 			}
-			throw this.formatError(error);
+			const formatted = this.formatError(error);
+			telemetryStore.add({
+				provider,
+				model,
+				ms: 0,
+				ok: false,
+				purpose: options.purpose || 'other',
+				errorMessage: formatted.message
+			});
+			throw formatted;
 		}
 	}
 
@@ -102,6 +120,7 @@ export class LLMClient {
 			{ role: 'system', content: SYSTEM_PROMPT },
 			{ role: 'user', content: createRepairPrompt(originalRequest, brokenCode, compilerError) }
 		];
+		const t0 = performance.now();
 		const response = await this.makeRequest(
 			provider,
 			apiKey,
@@ -111,7 +130,17 @@ export class LLMClient {
 			options?.signal
 		);
 		const data = await response.json();
-		return this.parseResponse(provider, data);
+		const parsed = this.parseResponse(provider, data);
+		const t1 = performance.now();
+		telemetryStore.add({
+			provider,
+			model,
+			ms: Math.round(t1 - t0),
+			ok: true,
+			purpose: 'repair',
+			usage: parsed.usage
+		});
+		return parsed;
 	}
 
 	private async streamChat(messages: LLMMessage[], options: LLMOptions): Promise<LLMResponse> {
@@ -119,6 +148,7 @@ export class LLMClient {
 		const model = options.model || DEFAULT_MODELS[provider];
 
 		try {
+			const t0 = performance.now();
 			const response = await this.makeRequest(
 				provider,
 				apiKey,
@@ -152,6 +182,14 @@ export class LLMClient {
 				}
 			}
 
+			const t1 = performance.now();
+			telemetryStore.add({
+				provider,
+				model,
+				ms: Math.round(t1 - t0),
+				ok: true,
+				purpose: options.purpose || 'other'
+			});
 			onStream?.({
 				delta: '',
 				accumulated,
@@ -163,7 +201,16 @@ export class LLMClient {
 			if (error instanceof Error && error.name === 'AbortError') {
 				throw new Error('Request cancelled');
 			}
-			throw this.formatError(error);
+			const formatted = this.formatError(error);
+			telemetryStore.add({
+				provider,
+				model,
+				ms: 0,
+				ok: false,
+				purpose: options.purpose || 'other',
+				errorMessage: formatted.message
+			});
+			throw formatted;
 		}
 	}
 

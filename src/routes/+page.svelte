@@ -6,6 +6,7 @@
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import ChatInterface from '$lib/components/ChatInterface.svelte';
+	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
 	import { LAYOUT } from '$lib/constants';
 	import { svelteCompiler, llmClient } from '$lib/services';
 	import { historyStore } from '$lib/stores/history';
@@ -276,3 +277,5 @@
 		</Pane>
 	</Splitpanes>
 </main>
+
+<MetricsPanel />
