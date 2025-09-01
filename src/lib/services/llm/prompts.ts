@@ -70,3 +70,63 @@ ${compilerError}
 
 Fix the issues and output one complete component starting with <script lang="ts">. Strictly avoid legacy syntax, external CDNs, and partial fragments.`;
 }
+
+// -------- Plan/Build flow additions --------
+export const PLAN_PROMPT = `You are a product UI planner. Produce a minimal JSON plan for a single Svelte 5 page.
+Output ONLY compact JSON (no prose, no markdown):
+{
+  "sections": [
+    {"type":"TopNav","props":{"logoText":"string","links":[{"label":"string","href":"string"}]}},
+    {"type":"Hero","props":{"title":"string","subtitle":"string","primaryCta":"string","secondaryCta?":"string","imageUrl?":"string"}},
+    {"type":"CardGrid","props":{"columns":3,"cards":[{"title":"string","price?":"string","imageUrl?":"string","badge?":"string"}]}}
+  ],
+  "theme":{"preset":"Neon|Minimal|Retro","primary":"#hex","radius":"sm|md|lg"}
+}
+Use defaults if user gave no values. Keep JSON small and valid.`;
+
+export function createBuildFromPlanPrompt(planJson: string): string {
+	return `Build one complete Svelte 5 page from this plan. Follow the Definition of Done exactly. Output only the component code.
+
+PLAN JSON:
+${planJson}
+
+SECTION CATALOG (examples to adapt):
+// TopNav
+<nav class="flex items-center justify-between px-4 h-14 bg-background text-foreground">
+  <div class="font-bold">{logoText}</div>
+  <div class="flex items-center gap-4">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary">{l.label}</a>{/each}</div>
+</nav>
+
+// Hero
+<section class="relative overflow-hidden py-16 bg-gradient-to-br from-primary/10 to-blue-500/10">
+  <div class="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+    <div>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">{title}</h1>
+      <p class="text-muted-foreground mb-6">{subtitle}</p>
+      <div class="flex gap-3">
+        <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground" onclick={handlePrimary}>{primaryCta}</button>
+        {#if secondaryCta}<button class="px-4 py-2 rounded-md border" onclick={handleSecondary}>{secondaryCta}</button>{/if}
+      </div>
+    </div>
+    {#if imageUrl}<img src={imageUrl} alt="" class="rounded-lg shadow-md" />{/if}
+  </div>
+</section>
+
+// CardGrid
+<section class="container mx-auto px-4 py-12">
+  <div class="grid gap-6" style={\`grid-template-columns: repeat(\${columns}, minmax(0,1fr));\`}>
+    {#each cards as c (c.title)}
+      <article class="bg-card text-card-foreground rounded-lg border overflow-hidden">
+        {#if c.imageUrl}<img src={c.imageUrl} alt="" class="w-full h-40 object-cover" />{/if}
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold">{c.title}</h3>
+            {#if c.badge}<span class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white">{c.badge}</span>{/if}
+          </div>
+          {#if c.price}<p class="text-sm text-muted-foreground">{c.price}</p>{/if}
+        </div>
+      </article>
+    {/each}
+  </div>
+</section>`;
+}

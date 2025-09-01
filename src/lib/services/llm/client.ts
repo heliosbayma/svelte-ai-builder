@@ -1,5 +1,11 @@
 import type { LLMMessage, LLMResponse, LLMOptions, LLMProviderType } from './types';
-import { SYSTEM_PROMPT, createComponentPrompt, createRepairPrompt } from './prompts';
+import {
+	SYSTEM_PROMPT,
+	createComponentPrompt,
+	createRepairPrompt,
+	PLAN_PROMPT,
+	createBuildFromPlanPrompt
+} from './prompts';
 
 // Use internal API route to avoid CORS issues
 const API_ENDPOINT = '/api/llm';
@@ -28,6 +34,24 @@ export class LLMClient {
 		if (options.onStream) {
 			return this.streamChat(messages, options);
 		}
+		return this.chat(messages, options);
+	}
+
+	// Plan step: get minimal JSON plan
+	async planPage(prompt: string, options: LLMOptions): Promise<LLMResponse> {
+		const messages: LLMMessage[] = [
+			{ role: 'system', content: PLAN_PROMPT },
+			{ role: 'user', content: prompt }
+		];
+		return this.chat(messages, options);
+	}
+
+	// Build step: produce full page from plan JSON
+	async buildPageFromPlan(planJson: string, options: LLMOptions): Promise<LLMResponse> {
+		const messages: LLMMessage[] = [
+			{ role: 'system', content: SYSTEM_PROMPT },
+			{ role: 'user', content: createBuildFromPlanPrompt(planJson) }
+		];
 		return this.chat(messages, options);
 	}
 

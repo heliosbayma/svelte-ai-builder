@@ -15,6 +15,7 @@
 	let currentPrompt = $state('');
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
+	let pendingPlan = $state('');
 
 	// Subscribe to chat store
 	const chat = chatStore;
@@ -65,10 +66,7 @@
 				: availableProviders[0];
 
 		// Add user message
-		chatStore.addMessage({
-			role: 'user',
-			content: prompt
-		});
+		chatStore.addMessage({ role: 'user', content: prompt });
 
 		// Start assistant message
 		const assistantMessageId = chatStore.addMessage({
@@ -85,33 +83,22 @@
 
 		try {
 			console.log('Starting LLM generation:', { provider, prompt });
-
 			// Get previous code for refinement context
 			const versions = chatStore.getComponentVersions();
 			const previousCode = versions[versions.length - 1]?.code;
 
-			let accumulatedContent = '';
-
 			const response = await llmClient.generateComponent(
 				prompt,
-				{
-					provider,
-					apiKey: apiKeys[provider]!,
-					signal: new AbortController().signal
-				},
+				{ provider, apiKey: apiKeys[provider]!, signal: new AbortController().signal },
 				previousCode
 			);
 
 			console.log('LLM generation completed:', response);
-
-			// Final update with generated code
 			chatStore.updateMessage(assistantMessageId, {
 				content: response.content,
 				generatedCode: response.content,
 				streaming: false
 			});
-
-			// Notify parent component
 			onCodeGenerated?.(response.content, prompt, provider);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -125,6 +112,32 @@
 		}
 	}
 
+	async function handlePlan() {
+		const prompt = currentPrompt.trim();
+		if (!prompt || $chat.isGenerating) return;
+		const apiKeys = get(apiKeyStore);
+		const provider =
+			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
+		chatStore.addMessage({ role: 'user', content: `PLAN: ${prompt}` });
+		const res = await llmClient.planPage(prompt, { provider, apiKey: apiKeys[provider]! });
+		pendingPlan = res.content;
+		chatStore.addMessage({ role: 'assistant', content: pendingPlan });
+	}
+
+	async function handleBuildFromPlan() {
+		if (!pendingPlan) return;
+		const apiKeys = get(apiKeyStore);
+		const provider =
+			(['openai', 'anthropic', 'gemini'] as const).find((p) => apiKeys[p]) || 'openai';
+		chatStore.addMessage({ role: 'user', content: 'BUILD FROM PLAN' });
+		const res = await llmClient.buildPageFromPlan(pendingPlan, {
+			provider,
+			apiKey: apiKeys[provider]!
+		});
+		chatStore.addMessage({ role: 'assistant', content: res.content });
+		onCodeGenerated?.(res.content, 'Build from plan', provider);
+	}
+
 	function handleUseCode(code: string) {
 		// Find the message containing this code to get context
 		const message = $chat.messages.find((m) => m.generatedCode === code);
@@ -133,12 +146,10 @@
 			: null;
 		const prompt = userMessage?.content || 'Use code from history';
 		const provider = message?.provider || 'unknown';
-
 		onCodeGenerated?.(code, prompt, provider);
 	}
 
 	function handleRefine(messageId: string) {
-		// Find the original user prompt for this assistant message
 		const messageIndex = $chat.messages.findIndex((m) => m.id === messageId);
 		if (messageIndex > 0) {
 			const userMessage = $chat.messages[messageIndex - 1];
@@ -151,7 +162,6 @@
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
 			event.preventDefault();
-			// Create a synthetic submit event for keyboard shortcut
 			const form = (event.target as HTMLElement).closest('form');
 			if (form) {
 				const submitEvent = new SubmitEvent('submit', { bubbles: true, cancelable: true });
@@ -162,7 +172,6 @@
 
 	function handleCancel() {
 		if ($chat.currentRequestId) {
-			// TODO: Implement request cancellation
 			chatStore.stopGeneration();
 		}
 	}
@@ -212,19 +221,24 @@
 						variant="outline"
 						onclick={handleCancel}
 						class="px-3"
-						aria-label="Cancel generation request"
+						aria-label="Cancel generation request">Cancel</Button
 					>
-						Cancel
-					</Button>
 				{:else}
-					<Button
-						type="submit"
-						disabled={!currentPrompt.trim()}
-						class="px-6"
-						aria-label="Send message to generate component"
-					>
-						Send
-					</Button>
+					<div class="flex gap-2">
+						<Button
+							type="submit"
+							disabled={!currentPrompt.trim()}
+							class="px-6"
+							aria-label="Send message to generate component">Send</Button
+						>
+						<Button variant="outline" onclick={handlePlan} aria-label="Plan page">Plan</Button>
+						<Button
+							variant="outline"
+							onclick={handleBuildFromPlan}
+							disabled={!pendingPlan}
+							aria-label="Build from plan">Build</Button
+						>
+					</div>
 				{/if}
 			</div>
 		</fieldset>
