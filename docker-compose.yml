@@ -16,7 +16,7 @@ services:
       ROLLUP_SKIP_NODEJS_NATIVE: '1'
     volumes:
       - .:/app
-      - /app/node_modules  # Exclude node_modules from host mount to prevent platform conflicts
+      - /app/node_modules # Exclude node_modules from host mount to prevent platform conflicts
       - pnpm-store:/root/.local/share/pnpm/store
 volumes:
   pnpm-store:

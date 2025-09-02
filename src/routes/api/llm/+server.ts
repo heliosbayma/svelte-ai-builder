@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Build headers based on provider
 		const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-		
+
 		switch (provider) {
 			case 'openai':
 				headers['Authorization'] = `Bearer ${apiKey}`;
@@ -98,9 +98,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Get endpoint URL
-		const url = provider === 'gemini' 
-			? ENDPOINTS.gemini(apiKey, model)
-			: ENDPOINTS[provider as keyof typeof ENDPOINTS];
+		const url =
+			provider === 'gemini'
+				? ENDPOINTS.gemini(apiKey, model)
+				: ENDPOINTS[provider as keyof typeof ENDPOINTS];
 
 		// Make request to LLM API
 		const response = await fetch(url as string, {
@@ -112,10 +113,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Forward response
 		if (!response.ok) {
 			const errorText = await response.text();
-			return json(
-				{ error: errorText },
-				{ status: response.status }
-			);
+			return json({ error: errorText }, { status: response.status });
 		}
 
 		// Handle streaming responses
@@ -124,7 +122,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				headers: {
 					'Content-Type': 'text/plain',
 					'Cache-Control': 'no-cache',
-					'Connection': 'keep-alive'
+					Connection: 'keep-alive'
 				}
 			});
 		}
@@ -132,7 +130,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Handle regular responses
 		const data = await response.json();
 		return json(data);
-
 	} catch (error) {
 		console.error('LLM API Error:', error);
 		return json(
