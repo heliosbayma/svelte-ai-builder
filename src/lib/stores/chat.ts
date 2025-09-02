@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 import type { LLMProviderType } from '$lib/services/llm';
 import { createPersistor } from '$lib/utils';
+import { historyStore } from '$lib/stores/history';
 
 export interface ChatMessage {
 	id: string;
@@ -11,6 +12,8 @@ export interface ChatMessage {
 	generatedCode?: string;
 	streaming?: boolean;
 	error?: string;
+	linkedVersionId?: string;
+	codeLength?: number;
 }
 
 export interface ChatState {
@@ -39,7 +42,9 @@ function createChatStore() {
 				role: m.role,
 				content: m.content,
 				timestamp: m.timestamp,
-				provider: m.provider
+				provider: m.provider,
+				linkedVersionId: m.linkedVersionId,
+				codeLength: m.codeLength
 			})),
 			isGenerating: false,
 			currentProvider: null,
@@ -55,7 +60,9 @@ function createChatStore() {
 					role: (m.role ?? 'assistant') as ChatMessage['role'],
 					content: String(m.content ?? ''),
 					timestamp: typeof m.timestamp === 'number' ? m.timestamp : Date.now(),
-					provider: m.provider
+					provider: m.provider as LLMProviderType | undefined,
+					linkedVersionId: m.linkedVersionId ? String(m.linkedVersionId) : undefined,
+					codeLength: typeof m.codeLength === 'number' ? m.codeLength : undefined
 				})),
 				isGenerating: false,
 				currentProvider: null,
@@ -64,8 +71,26 @@ function createChatStore() {
 		}
 	});
 
+	function rehydrateFromHistory(state: ChatState): ChatState {
+		try {
+			const messages = state.messages.map((m) => {
+				if (m.role === 'assistant' && m.linkedVersionId && !m.generatedCode) {
+					const v = historyStore.getVersionById(m.linkedVersionId);
+					if (v?.code) {
+						return { ...m, generatedCode: v.code, codeLength: m.codeLength ?? v.code.length };
+					}
+				}
+				return m;
+			});
+			return { ...state, messages };
+		} catch {
+			return state;
+		}
+	}
+
 	const restored = persist.load(initialState);
-	const { subscribe, set, update } = writable(restored);
+	const restoredHydrated = rehydrateFromHistory(restored);
+	const { subscribe, set, update } = writable(restoredHydrated);
 	// Non-persisted map for in-flight request controllers
 	const controllers = new Map<string, AbortController>();
 
@@ -175,6 +200,26 @@ function createChatStore() {
 					code: msg.generatedCode!,
 					provider: msg.provider!
 				}));
+		},
+
+		linkLatestAssistantToVersion: (versionId: string, codeLength: number) => {
+			update((state) => {
+				const idxFromEnd = [...state.messages].reverse().findIndex((m) => m.role === 'assistant');
+				if (idxFromEnd === -1) return state;
+				const absolute = state.messages.length - 1 - idxFromEnd;
+				const next = {
+					...state,
+					messages: state.messages.map((m, i) =>
+						i === absolute ? { ...m, linkedVersionId: versionId, codeLength } : m
+					)
+				};
+				persist.save(next);
+				return next;
+			});
+		},
+
+		rehydrateNow: () => {
+			update((state) => rehydrateFromHistory(state));
 		}
 	};
 }

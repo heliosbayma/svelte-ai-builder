@@ -35,24 +35,29 @@ Notes:
 
 ## API Keys
 
-**Required**: At least one API key from:
+**Required**: Provide at least one key for:
 
 - OpenAI (GPT models)
 - Anthropic (Claude models)
 - Google (Gemini models)
 
-**How it works**:
+**Where to add**: Click the Settings button in the app and paste your key(s). You can choose storage mode:
 
-- Keys stored locally in your browser only, never sent to our servers
-- Enter via Settings button on first use
-- Direct API calls from browser to chosen provider
+- Local (persists across tabs) or Session-only.
+
+**Storage & security**:
+
+- Keys are encrypted client-side in your browser using AES-GCM and a per-session password. They are never persisted on the server.
+- When you run a prompt, the key is sent only for that request to the app’s internal endpoint `/api/llm`, which immediately proxies the request to the selected provider and returns the response. We do not log or store keys server-side.
+- Header usage: OpenAI uses `Authorization: Bearer <key>`, Anthropic uses `x-api-key: <key>`, and Gemini includes the key in the provider URL.
+- If you deploy this app yourself, ensure you use HTTPS and a trusted hosting environment, as your deployment will see keys in transit during proxying.
 
 ## Limitations
 
-- **Client-only**: Runs entirely in browser, no backend
-- **Your API costs**: You pay LLM providers directly for usage
-- **Single components**: Generates individual .svelte files, not full apps
-- **Modern browsers**: Requires ES modules and iframe support
-- **Internet required**: For API calls to LLM providers
+- **Proxy required**: Uses a lightweight server route to avoid CORS. No key storage server-side.
+- **Your API costs**: You pay providers directly for usage and are subject to rate limits.
+- **Scope**: Generates Svelte components/pages; not a full project scaffolder.
+- **Modern browsers**: Requires ES modules, `iframe`, and SSE streaming support.
+- **Network required**: Internet access is required for provider API calls.
 
 Built with SvelteKit + TypeScript + Tailwind CSS

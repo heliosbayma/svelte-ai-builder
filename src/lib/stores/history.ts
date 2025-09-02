@@ -72,6 +72,14 @@ function createHistoryStore() {
 
 	return {
 		subscribe,
+		getVersionById: (id: string): ComponentVersion | null => {
+			let found: ComponentVersion | null = null;
+			const unsubscribe = subscribe((state) => {
+				found = state.versions.find((v) => v.id === id) || null;
+			});
+			unsubscribe();
+			return found;
+		},
 
 		// Add a new version to history
 		addVersion: (version: Omit<ComponentVersion, 'id' | 'timestamp'>) => {

@@ -1,7 +1,8 @@
 // Layout constants
+// TODO: improve sizes limits
 export const LAYOUT = {
 	CHAT_SIZE_DEFAULT: 25,
-	CHAT_SIZE_MIN: 15,
+	CHAT_SIZE_MIN: 21,
 	CHAT_SIZE_MAX: 50,
 
 	PREVIEW_SIZE_DEFAULT: 65,

@@ -8,23 +8,38 @@
 	import { get } from 'svelte/store';
 	import { createPersistor } from '$lib/utils';
 	import type { LLMProviderType } from '$lib/services/llm';
+	import { Send, X, Sparkles } from '@lucide/svelte';
 
 	interface Props {
 		onCodeGenerated?: (code: string, prompt: string, provider: LLMProviderType) => void;
+		onStartGenerating?: () => void;
 	}
 
-	let { onCodeGenerated }: Props = $props();
+	let { onCodeGenerated, onStartGenerating }: Props = $props();
 	let currentPrompt = $state('');
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
 	let pendingPlan = $state('');
 	let modelInput = $state('');
 	let lastProvider = $state<'openai' | 'anthropic' | 'gemini' | ''>('');
+	let sendOnEnter = $state(true);
+
+	function autoGrow(e: Event) {
+		const el = e.currentTarget as HTMLTextAreaElement | null;
+		if (!el) return;
+		el.style.height = 'auto';
+		const maxLines = 8;
+		const cs = getComputedStyle(el);
+		const line = parseFloat(cs.lineHeight || '20') || 20;
+		const maxHeight = Math.round(line * maxLines);
+		el.style.height = Math.min(el.scrollHeight, maxHeight) + 'px';
+	}
 
 	// Persist last-used model/provider (client-only)
 	const chatUiPersist = createPersistor<{
 		lastModel?: string;
 		lastProvider?: 'openai' | 'anthropic' | 'gemini';
+		sendOnEnter?: boolean;
 	}>({
 		key: 'ui-chat',
 		version: 1
@@ -35,6 +50,7 @@
 		const restored = chatUiPersist.load({});
 		if (restored.lastModel) modelInput = restored.lastModel;
 		if (restored.lastProvider) lastProvider = restored.lastProvider;
+		if (typeof restored.sendOnEnter === 'boolean') sendOnEnter = restored.sendOnEnter;
 	});
 
 	// Subscribe to chat store
@@ -49,7 +65,7 @@
 	// Auto-scroll when new messages arrive
 	$effect(() => {
 		if ($chat.messages.length > 0) {
-			setTimeout(scrollToBottom, 50);
+			requestAnimationFrame(() => scrollToBottom());
 		}
 	});
 
@@ -57,6 +73,16 @@
 		if (!chatContainer) return;
 		const { scrollTop, scrollHeight, clientHeight } = chatContainer;
 		isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+	}
+
+	function handleToggleSendOnEnter(e: Event) {
+		const input = e.currentTarget as HTMLInputElement | null;
+		sendOnEnter = !!input?.checked;
+		chatUiPersist.save({
+			lastModel: modelInput || undefined,
+			lastProvider: lastProvider || undefined,
+			sendOnEnter
+		});
 	}
 
 	async function handleSubmit(event: SubmitEvent) {
@@ -102,8 +128,16 @@
 
 		// Clear input and start generation
 		currentPrompt = '';
+		const inputEl = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
+		if (inputEl) {
+			inputEl.style.height = 'auto';
+			inputEl.focus();
+		}
 		const requestId = crypto.randomUUID();
 		chatStore.startGeneration(provider, requestId);
+
+		// Notify parent to show preview loading immediately
+		onStartGenerating?.();
 
 		try {
 			console.log('Starting LLM generation:', { provider, prompt });
@@ -131,8 +165,9 @@
 			// Guard late results for canceled/replaced requests
 			if ($chat.currentRequestId !== requestId) return;
 			chatStore.updateMessage(assistantMessageId, {
-				content: response.content,
+				content: '',
 				generatedCode: response.content,
+				codeLength: response.content?.length || 0,
 				streaming: false
 			});
 			onCodeGenerated?.(response.content, prompt, provider);
@@ -214,13 +249,21 @@
 		try {
 			lastProvider = provider;
 			chatUiPersist.save({ lastModel: modelInput || undefined, lastProvider: provider });
+			// Notify parent to show preview loading for build-from-plan flow
+			onStartGenerating?.();
 			const res = await llmClient.buildPageFromPlan(pendingPlan, {
 				provider,
 				apiKey: apiKeys[provider]!,
 				model: modelInput || undefined,
 				purpose: 'build'
 			});
-			chatStore.addMessage({ role: 'assistant', content: res.content });
+			chatStore.addMessage({
+				role: 'assistant',
+				content: '',
+				generatedCode: res.content,
+				codeLength: res.content?.length || 0,
+				provider
+			});
 			onCodeGenerated?.(res.content, 'Build from plan', provider);
 		} catch {
 			chatStore.addMessage({
@@ -233,7 +276,13 @@
 					apiKey: apiKeys[provider]!,
 					purpose: 'build'
 				});
-				chatStore.addMessage({ role: 'assistant', content: res2.content });
+				chatStore.addMessage({
+					role: 'assistant',
+					content: '',
+					generatedCode: res2.content,
+					codeLength: res2.content?.length || 0,
+					provider
+				});
 				onCodeGenerated?.(res2.content, 'Build from plan', provider);
 			} catch {
 				chatStore.addMessage({
@@ -266,7 +315,11 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+		if (event.key !== 'Enter') return;
+		const wantsSendOnEnter =
+			sendOnEnter && !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
+		const wantsCtrlSend = !sendOnEnter && (event.metaKey || event.ctrlKey);
+		if (wantsSendOnEnter || wantsCtrlSend) {
 			event.preventDefault();
 			const form = (event.target as HTMLElement).closest('form');
 			if (form) {
@@ -290,11 +343,24 @@
 	<section
 		bind:this={chatContainer}
 		onscroll={handleScroll}
-		class="flex-1 overflow-y-auto p-4 scroll-smooth"
+		class="relative flex-1 overflow-y-auto p-4 scroll-smooth chat-scrollbar"
 		role="log"
 		aria-live="polite"
+		aria-busy={$chat.isGenerating ? 'true' : 'false'}
 		aria-label="Chat conversation"
 	>
+		{#if !$chat.isGenerating && !isAtBottom && $chat.messages.length > 0}
+			<button
+				onclick={() => {
+					if (!chatContainer) return;
+					chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+				}}
+				class="absolute left-1/2 -translate-x-1/2 bottom-4 z-10 rounded-full bg-primary text-primary-foreground text-xs px-3 py-1 shadow"
+				aria-label="Jump to latest messages"
+			>
+				Jump to latest
+			</button>
+		{/if}
 		{#if $chat.messages.length === 0}
 			<div class="text-center text-muted-foreground mt-8">
 				<p class="text-sm">Start a conversation to generate Svelte components</p>
@@ -308,71 +374,101 @@
 	</section>
 
 	<!-- Input area -->
-	<form onsubmit={handleSubmit} class="border-t p-4" aria-label="Message input form">
-		<fieldset class="flex gap-2">
+	<form onsubmit={handleSubmit} class="border-t p-4 space-y-3" aria-label="Message input form">
+		<fieldset>
 			<legend class="sr-only">Send message to generate Svelte component</legend>
 			<Textarea
 				bind:value={currentPrompt}
 				onkeydown={handleKeydown}
+				oninput={autoGrow}
 				placeholder="Describe the component you want to create..."
-				class="flex-1 min-h-[60px] resize-none"
+				class="w-full min-h-[60px] max-h-[200px] resize-none"
 				disabled={$chat.isGenerating}
 				aria-label="Component description input"
+				data-chat-textarea
 			/>
-			<div class="flex flex-col gap-2" role="group" aria-label="Message actions">
+		</fieldset>
+
+		<!-- Action buttons below textarea -->
+		<div class="flex items-center justify-between gap-2">
+			<div class="flex items-center gap-2">
 				{#if $chat.isGenerating}
 					<Button
 						variant="outline"
+						size="sm"
 						onclick={handleCancel}
-						class="px-3"
-						aria-label="Cancel generation request">Cancel</Button
+						class="h-8 px-3 text-xs gap-1.5"
+						aria-label="Cancel generation"
 					>
+						<X class="w-3.5 h-3.5" />
+						Cancel
+					</Button>
 				{:else}
-					<div class="flex gap-2 items-center">
-						<Button
-							type="submit"
-							disabled={!currentPrompt.trim()}
-							class="px-6"
-							aria-label="Send message to generate component">Send</Button
-						>
-						<Button variant="outline" onclick={handlePlan} aria-label="Plan page">Plan</Button>
+					<Button
+						type="submit"
+						size="sm"
+						disabled={!currentPrompt.trim()}
+						class="h-8 px-3 text-xs gap-1.5"
+						aria-label="Send message"
+					>
+						<Send class="w-3.5 h-3.5" />
+						Send
+					</Button>
+					{#if pendingPlan}
 						<Button
 							variant="outline"
+							size="sm"
 							onclick={handleBuildFromPlan}
-							disabled={!pendingPlan || $chat.isGenerating}
-							aria-label="Build from plan">Build</Button
+							disabled={$chat.isGenerating}
+							class="h-8 px-3 text-xs gap-1.5"
+							aria-label="Build from existing plan"
 						>
-						<select
-							class="h-9 px-2 text-sm border rounded-md bg-background"
-							bind:value={modelInput}
-							aria-label="Model override"
-						>
-							<option value="">Auto (default)</option>
-							<optgroup label="OpenAI">
-								<option value="gpt-5">gpt-5</option>
-								<option value="gpt-4o-mini">gpt-4o-mini</option>
-								<option value="gpt-4o">gpt-4o</option>
-								<option value="gpt-4.1-mini">gpt-4.1-mini</option>
-							</optgroup>
-							<optgroup label="Anthropic">
-								<option value="claude-4-sonnet">claude-4-sonnet</option>
-								<option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
-								<option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
-							</optgroup>
-							<optgroup label="Gemini">
-								<option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest</option>
-								<option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
-							</optgroup>
-						</select>
-					</div>
+							<Sparkles class="w-3.5 h-3.5" />
+							Build
+						</Button>
+					{/if}
 				{/if}
-			</div>
-		</fieldset>
 
-		<footer
-			class="flex items-center justify-between mt-2 text-xs text-muted-foreground"
-			aria-label="Input hints and status"
-		>
+				<!-- Model selector -->
+				<select
+					class="h-8 px-2 text-xs border rounded-md bg-background text-muted-foreground"
+					bind:value={modelInput}
+					aria-label="Model override"
+				>
+					<option value="">Auto model</option>
+					<optgroup label="OpenAI">
+						<option value="gpt-4o">GPT-4o</option>
+						<option value="gpt-4o-mini">GPT-4o mini</option>
+					</optgroup>
+					<optgroup label="Anthropic">
+						<option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+						<option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+					</optgroup>
+					<optgroup label="Gemini">
+						<option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+						<option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
+					</optgroup>
+				</select>
+			</div>
+
+			<!-- Right side options -->
+			<div class="flex items-center gap-3 text-xs text-muted-foreground">
+				<label
+					class="flex items-center gap-1.5 cursor-pointer hover:text-foreground transition-colors"
+				>
+					<input
+						type="checkbox"
+						checked={sendOnEnter}
+						oninput={handleToggleSendOnEnter}
+						aria-label="Toggle send on Enter"
+						class="w-3 h-3"
+					/>
+					<span>{sendOnEnter ? '↵ to send' : '⌘↵ to send'}</span>
+				</label>
+			</div>
+		</div>
+
+		<footer class="hidden" aria-label="Input hints and status">
 			<span>⌘+Enter to send</span>
 			{#if $chat.isGenerating && $chat.currentProvider}
 				<span aria-live="polite">Generating with {$chat.currentProvider}...</span>
@@ -380,3 +476,30 @@
 		</footer>
 	</form>
 </main>
+
+<style>
+	.chat-scrollbar::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.chat-scrollbar::-webkit-scrollbar-track {
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 4px;
+	}
+
+	.chat-scrollbar::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 4px;
+		transition: background-color 0.2s;
+	}
+
+	.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.25);
+	}
+
+	/* Firefox scrollbar */
+	.chat-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
+	}
+</style>
