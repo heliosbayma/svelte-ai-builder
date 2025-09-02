@@ -52,11 +52,11 @@
 
 		// Backoff up to ~2s, then hard-reload the iframe once to recover
 		if (mountAttempts < 120 && !isMounted) {
-			mountAttemptId = requestAnimationFrame(() => {
+			mountAttemptId = setTimeout(() => {
 				mountAttempts += 1;
 				mountAttemptId = null; // Reset for next attempt
 				scheduleMountAttempt();
-			});
+			}, 50); // Add a 50ms delay to prevent infinite recursion
 		} else if (!isMounted) {
 			// One-time recovery: force reload
 			try {
@@ -96,7 +96,7 @@
 			isMounted = true;
 			lastCompiledJs = compiledJs; // Remember what we just mounted
 			// Stop retry loop
-			if (mountAttemptId) cancelAnimationFrame(mountAttemptId);
+			if (mountAttemptId) clearTimeout(mountAttemptId);
 			mountAttemptId = null;
 		}
 		if (event.data?.type === 'mount-error') {
@@ -164,7 +164,7 @@
 				// Reset mount state for new code
 				isMounted = false;
 				// Cancel any existing mount attempts
-				if (mountAttemptId) cancelAnimationFrame(mountAttemptId);
+				if (mountAttemptId) clearTimeout(mountAttemptId);
 				mountAttemptId = null;
 				// Show loading immediately if provided
 				if (loadingMessage) {
@@ -191,7 +191,7 @@
 			iframeReady = false;
 			isMounted = false;
 			lastCompiledJs = ''; // Reset to allow remounting same code
-			if (mountAttemptId) cancelAnimationFrame(mountAttemptId);
+			if (mountAttemptId) clearTimeout(mountAttemptId);
 			mountAttemptId = null;
 			mountAttempts = 0;
 			iframeRef.src = iframeRef.src; // Force reload
@@ -220,7 +220,7 @@
 				iframeReady = false;
 				isMounted = false;
 				lastCompiledJs = ''; // Reset to allow remounting same code
-				if (mountAttemptId) cancelAnimationFrame(mountAttemptId);
+				if (mountAttemptId) clearTimeout(mountAttemptId);
 				mountAttemptId = null;
 				mountAttempts = 0;
 				// Handshake: ask the iframe to re-announce readiness
