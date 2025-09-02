@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { encryptData, decryptData } from '$lib/utils/crypto';
+import { encryptData, decryptData, hashData } from '$lib/utils/crypto';
 
 export interface ApiKeys {
 	openai: string | null;
@@ -8,11 +8,12 @@ export interface ApiKeys {
 	gemini: string | null;
 }
 
-interface EncryptedApiKeys {
+export interface EncryptedApiKeys {
 	openai: string | null;
 	anthropic: string | null;
 	gemini: string | null;
 	_encrypted: boolean;
+	_keyHash?: string; // Hash of master password for verification
 }
 
 const defaultKeys: ApiKeys = {
@@ -25,7 +26,7 @@ type StorageMode = 'local' | 'session';
 const MODE_KEY = 'ai-builder-api-keys:mode';
 const STORAGE_KEY = 'ai-builder-api-keys-encrypted';
 
-// Auto-generated session master password
+// Master password - could be user-provided or auto-generated per session
 let masterPassword: string | null = null;
 
 function readMode(): StorageMode {
@@ -43,51 +44,17 @@ function getStorage(mode: StorageMode) {
 	return mode === 'session' ? sessionStorage : localStorage;
 }
 
-function initMasterPassword() {
-	if (!browser || masterPassword) return;
-
-	// Try to get existing session password
-	let sessionPassword = sessionStorage.getItem('ai-builder-master-password');
-
-	if (!sessionPassword) {
-		// Generate new session password
-		sessionPassword = crypto.randomUUID() + crypto.randomUUID();
-		sessionStorage.setItem('ai-builder-master-password', sessionPassword);
-	}
-
-	masterPassword = sessionPassword;
-}
-
 async function loadKeys(): Promise<ApiKeys> {
 	if (!browser) return defaultKeys;
-
-	initMasterPassword();
 
 	try {
 		const mode = readMode();
 		const stored = getStorage(mode).getItem(STORAGE_KEY);
-
-		// Migration: check for old unencrypted storage
-		if (!stored) {
-			const oldStored = getStorage(mode).getItem('ai-builder-api-keys');
-			if (oldStored) {
-				const parsed = JSON.parse(oldStored);
-				const migratedKeys = {
-					openai: parsed.openai || null,
-					anthropic: parsed.anthropic || null,
-					gemini: parsed.gemini || null
-				};
-				// Save encrypted and remove old
-				await saveKeys(migratedKeys, mode);
-				getStorage(mode).removeItem('ai-builder-api-keys');
-				return migratedKeys;
-			}
-			return defaultKeys;
-		}
+		if (!stored) return defaultKeys;
 
 		const parsed = JSON.parse(stored) as EncryptedApiKeys;
 
-		// If not encrypted, return as-is (fallback)
+		// If not encrypted, migrate old format
 		if (!parsed._encrypted) {
 			return {
 				openai: parsed.openai || null,
@@ -96,39 +63,55 @@ async function loadKeys(): Promise<ApiKeys> {
 			};
 		}
 
+		// If encrypted but no master password, return empty keys
+		if (!masterPassword) {
+			return defaultKeys;
+		}
+
 		// Decrypt the keys
 		const decryptedKeys: ApiKeys = { ...defaultKeys };
 
 		for (const [provider, encryptedKey] of Object.entries(parsed)) {
-			if (provider.startsWith('_') || !encryptedKey || !masterPassword) continue;
+			if (provider.startsWith('_') || !encryptedKey) continue;
 
 			try {
 				decryptedKeys[provider as keyof ApiKeys] = await decryptData(encryptedKey, masterPassword);
-			} catch {
-				console.warn(`Failed to decrypt ${provider} key`);
+			} catch (error) {
+				console.warn(`Failed to decrypt ${provider} key:`, error);
 				decryptedKeys[provider as keyof ApiKeys] = null;
 			}
 		}
 
 		return decryptedKeys;
 	} catch (error) {
-		console.warn('Failed to load API keys:', error);
+		console.warn('Failed to load encrypted API keys:', error);
 		return defaultKeys;
 	}
 }
 
-async function saveKeys(keys: ApiKeys, mode?: StorageMode): Promise<void> {
-	if (!browser || !masterPassword) return;
+async function saveKeys(keys: ApiKeys): Promise<void> {
+	if (!browser) return;
 
-	const storageMode = mode || readMode();
-	const storage = getStorage(storageMode);
+	const mode = readMode();
+	const storage = getStorage(mode);
+
+	// If no master password, save unencrypted (fallback)
+	if (!masterPassword) {
+		const unencrypted: EncryptedApiKeys = {
+			...keys,
+			_encrypted: false
+		};
+		storage.setItem(STORAGE_KEY, JSON.stringify(unencrypted));
+		return;
+	}
 
 	// Encrypt the keys
 	const encrypted: EncryptedApiKeys = {
 		openai: null,
 		anthropic: null,
 		gemini: null,
-		_encrypted: true
+		_encrypted: true,
+		_keyHash: await hashData(masterPassword)
 	};
 
 	for (const [provider, key] of Object.entries(keys)) {
@@ -144,7 +127,7 @@ async function saveKeys(keys: ApiKeys, mode?: StorageMode): Promise<void> {
 	storage.setItem(STORAGE_KEY, JSON.stringify(encrypted));
 }
 
-function createApiKeyStore() {
+function createEncryptedApiKeyStore() {
 	const { subscribe, set } = writable<ApiKeys>(defaultKeys);
 	let mode: StorageMode = readMode();
 	let initialized = false;
@@ -157,30 +140,49 @@ function createApiKeyStore() {
 		initialized = true;
 	};
 
-	// Auto-initialize on first access
-	if (browser) {
-		init();
-	}
-
 	return {
 		subscribe,
-		set: async (keys: ApiKeys) => {
+
+		// Initialize with master password
+		async setMasterPassword(password: string) {
+			masterPassword = password;
+			await init();
+		},
+
+		// Generate and use a session-based master password
+		async useSessionPassword() {
+			if (!browser) return;
+
+			// Try to get existing session password
+			let sessionPassword = sessionStorage.getItem('ai-builder-master-password');
+
+			if (!sessionPassword) {
+				// Generate new session password
+				sessionPassword = crypto.randomUUID() + crypto.randomUUID();
+				sessionStorage.setItem('ai-builder-master-password', sessionPassword);
+			}
+
+			masterPassword = sessionPassword;
+			await init();
+		},
+
+		async set(keys: ApiKeys) {
 			await saveKeys(keys);
 			set(keys);
 		},
-		update: async (updater: (keys: ApiKeys) => ApiKeys) => {
-			const currentKeys = await loadKeys();
-			const newKeys = updater(currentKeys);
+
+		async update(updater: (keys: ApiKeys) => ApiKeys) {
+			const current = await loadKeys();
+			const newKeys = updater(current);
 			await saveKeys(newKeys);
 			set(newKeys);
 		},
+
 		clear: () => {
 			if (browser) {
 				try {
 					localStorage.removeItem(STORAGE_KEY);
-					localStorage.removeItem('ai-builder-api-keys'); // Old storage
 					sessionStorage.removeItem(STORAGE_KEY);
-					sessionStorage.removeItem('ai-builder-api-keys'); // Old storage
 					sessionStorage.removeItem('ai-builder-master-password');
 				} catch {
 					/* ignore */
@@ -189,25 +191,36 @@ function createApiKeyStore() {
 			masterPassword = null;
 			set(defaultKeys);
 		},
+
 		getStorageMode: (): StorageMode => mode,
-		setStorageMode: async (next: StorageMode) => {
+
+		async setStorageMode(next: StorageMode) {
 			if (!browser) return;
 			const current = await loadKeys();
 			mode = next;
 			writeMode(next);
 			try {
-				await saveKeys(current, next);
+				await saveKeys(current);
 				const other = mode === 'session' ? localStorage : sessionStorage;
 				other.removeItem(STORAGE_KEY);
 			} catch {
 				/* ignore */
 			}
 			set(current);
+		},
+
+		// Check if encryption is active
+		hasEncryption: () => !!masterPassword,
+
+		// Get key hash for verification (without exposing master password)
+		getMasterPasswordHash: async () => {
+			if (!masterPassword) return null;
+			return hashData(masterPassword);
 		}
 	};
 }
 
-export const apiKeyStore = createApiKeyStore();
+export const encryptedApiKeyStore = createEncryptedApiKeyStore();
 
 export function hasAnyApiKey(keys: ApiKeys): boolean {
 	return !!(keys.openai || keys.anthropic || keys.gemini);

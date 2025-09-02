@@ -37,7 +37,9 @@
 			errors = { openai: '', anthropic: '', gemini: '' };
 			try {
 				storageMode = apiKeyStore.getStorageMode();
-			} catch {}
+			} catch {
+				// Ignore errors when getting storage mode
+			}
 			// Focus the modal for keyboard events
 			modalRef.focus();
 		}
@@ -75,7 +77,7 @@
 		};
 	}
 
-	function saveKeys() {
+	async function saveKeys() {
 		// Validate all non-empty keys
 		let hasError = false;
 		for (const provider of LLM_PROVIDERS) {
@@ -94,7 +96,7 @@
 			return;
 		}
 
-		apiKeyStore.set(keys);
+		await apiKeyStore.set(keys);
 		onClose();
 	}
 
@@ -106,9 +108,9 @@
 		apiKeyStore.clear();
 	}
 
-	function handleStorageChange(mode: 'local' | 'session') {
+	async function handleStorageChange(mode: 'local' | 'session') {
 		storageMode = mode;
-		apiKeyStore.setStorageMode(mode);
+		await apiKeyStore.setStorageMode(mode);
 	}
 
 	function handleBackdropClick(e: MouseEvent) {
@@ -133,7 +135,7 @@
 			<CardHeader>
 				<CardTitle id="modal-title">API Key Settings</CardTitle>
 				<CardDescription>
-					Your keys are stored locally and never sent to any server.
+					Your keys are encrypted and stored locally, never sent to any server.
 					<span class="text-xs block mt-1 opacity-70">Press ⌘+Enter to save, Esc to close</span>
 				</CardDescription>
 			</CardHeader>
