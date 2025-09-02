@@ -31,12 +31,15 @@
 		const transformed =
 			'const $ = (globalThis).$;\nconst svelte_internal = (globalThis).svelte_internal;\n' +
 			js
-				// Remove any imports from svelte/internal/* with from syntax
-				.replace(/import\s+.*?from\s+["']svelte\/internal\/[^"]+["'];?\n?/g, '')
-				// Remove bare imports like: import 'svelte/internal/disclose-version'
-				.replace(/import\s+["']svelte\/internal\/[^"]+["'];?\n?/g, '')
-				// Remove specific "import * as $ from 'svelte/internal/client'"
-				.replace(/import\s+\*\s+as\s+\$\s+from\s+["']svelte\/internal\/client["'];?\n?/g, '');
+				// Strip any svelte/internal imports (line-anchored, both quotes)
+				.replace(/^import\s+.*?from\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '')
+				.replace(/^import\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '');
+
+		// Debug: inspect transformed module
+		try {
+			console.log('[preview] transformed length', transformed.length);
+			console.log('[preview] transformed head', transformed.slice(0, 240));
+		} catch {}
 
 		try {
 			// Import as a module so top-level ESM syntax is allowed
@@ -94,6 +97,36 @@
 					}
 				}
 			}
+
+			// Apply image error fallbacks (for broken external URLs)
+			try {
+				const applyImgFallbacks = (root: HTMLElement | Document) => {
+					const imgs = root.querySelectorAll('img');
+					imgs.forEach((img) => {
+						if ((img as HTMLElement).dataset && (img as HTMLElement).dataset.fallbackApplied)
+							return;
+						img.addEventListener('error', () => {
+							const el = img as HTMLImageElement & { dataset: DOMStringMap };
+							if (el.dataset.fallbackApplied) return;
+							el.dataset.fallbackApplied = '1';
+							const seed = el.alt && el.alt.trim().length > 0 ? el.alt.trim() : 'image';
+							el.src = `https://picsum.photos/seed/${encodeURIComponent(seed)}/640/360`;
+						});
+					});
+				};
+				applyImgFallbacks(appEl);
+				const mo = new MutationObserver((mutations) => {
+					for (const m of mutations) {
+						m.addedNodes.forEach((node) => {
+							if (node instanceof HTMLElement) {
+								if (node.tagName === 'IMG') applyImgFallbacks(node);
+								applyImgFallbacks(node);
+							}
+						});
+					}
+				});
+				mo.observe(appEl, { childList: true, subtree: true });
+			} catch {}
 
 			if (!mounted) {
 				appEl.innerHTML =

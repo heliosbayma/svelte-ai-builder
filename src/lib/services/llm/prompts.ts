@@ -8,7 +8,9 @@ DEFINITION OF DONE (must satisfy all):
 5) Event handlers: onclick=, onsubmit= (NOT on:click, NOT inline arrows)
 6) Tailwind v4 classes only; no external CDN/scripts; no imports from svelte/internal/*
 7) Accessible labels/aria for form inputs; close all tags
-8) No comments or text before <script>; output only the component code
+8) Images: provide descriptive alt based on the subject; when unsure, use a concise subject phrase.
+9) If you render internal nav links, implement simple in-component navigation: use let currentPath = $state('/'); define function nav(e) { const a = e.currentTarget; const href = a && a.getAttribute('href') || '/'; if (href.startsWith('/')) { e.preventDefault && e.preventDefault(); currentPath = href; } }; set anchors to href values and onclick={nav}; render the matching page content when currentPath changes.
+10) No comments or text before <script>; output only the component code
 
 STRICTLY FORBIDDEN:
 - Markdown fences, prose, or surrounding tags
@@ -39,6 +41,9 @@ USER REQUEST: ${userRequest}
 CURRENT CODE:
 ${previousCode}
 
+Ensure images are semantically tied to the subject: when generating hero or cards, pick an imageSubject string (short noun phrase) derived from the user request or the item title, and set <img alt={imageSubject}>. Use the provided safeImage(url, imageSubject, w, h) helper pattern (pass the subject as the seed).
+If you include a menu or nav links (e.g., /matches, /standings), implement simple in-component navigation: use let currentPath = $state('/'); define function nav(e) { const a = e.currentTarget as HTMLAnchorElement; const href = (a && a.getAttribute('href')) || '/'; if (href.startsWith('/')) { e.preventDefault && e.preventDefault(); currentPath = href; } }; set anchors to onclick={nav} and render a minimal content section for each linked route.
+
 Generate the complete updated component (start with <script lang="ts">):`;
 	}
 
@@ -49,6 +54,8 @@ Follow the Definition of Done strictly:
 - Declare interface Props and destructure with $props()
 - Use $state(), $effect(); no legacy syntax
 - Tailwind v4 classes; accessible form markup
+- Images: add descriptive alt, and pass a subject to safeImage as the seed
+- If you include nav links, add simple in-component navigation (onclick={nav}) and minimal per-route content
 - Output only the component code`;
 }
 
@@ -77,9 +84,10 @@ Output ONLY compact JSON (no prose, no markdown):
 {
   "sections": [
     {"type":"TopNav","props":{"logoText":"string","links":[{"label":"string","href":"string"}]}},
-    {"type":"Hero","props":{"title":"string","subtitle":"string","primaryCta":"string","secondaryCta?":"string","imageUrl?":"string"}},
-    {"type":"CardGrid","props":{"columns":3,"cards":[{"title":"string","price?":"string","imageUrl?":"string","badge?":"string"}]}}
+    {"type":"Hero","props":{"title":"string","subtitle":"string","primaryCta":"string","secondaryCta?":"string","imageUrl?":"string","imageSubject?":"string"}},
+    {"type":"CardGrid","props":{"columns":3,"cards":[{"title":"string","price?":"string","imageUrl?":"string","imageSubject?":"string","badge?":"string"}]}}
   ],
+  "routes":[{"path":"/","sections":["TopNav","Hero","CardGrid"]}],
   "theme":{"preset":"Neon|Minimal|Retro","primary":"#hex","radius":"sm|md|lg"}
 }
 Use defaults if user gave no values. Keep JSON small and valid.`;
@@ -97,7 +105,9 @@ LAYOUT RULES (must follow):
 - Use a responsive grid for cards (no inline styles). See helper gridCols().
 
 MAPPING RULES:
-- Map TopNav.logoText/links, Hero.title/subtitle/primaryCta/secondaryCta?/imageUrl?, and CardGrid.columns/cards exactly.
+- Map TopNav.logoText/links, Hero.title/subtitle/primaryCta/secondaryCta?/imageUrl?/imageSubject?, and CardGrid.columns/cards exactly.
+- For each hero and card, derive imageSubject if missing: a short noun phrase matching the item.
+- If the plan has links with paths (e.g., /matches), implement a minimal client-side router using currentPath + nav handler; render a basic placeholder section per path so the user can navigate without leaving the preview.
 - Add minimal interactivity: let cartCount = $state(0); function addToCart(){ cartCount += 1 }.
 - Named handlers only, Tailwind v4 classes, runes, and Props as per DoD.
 
@@ -110,10 +120,16 @@ function addToCart() { cartCount += 1 }
 function handlePrimary() {}
 function handleSecondary() {}
 const links = [] as Array<{label:string;href:string}>;
-const cards = [] as Array<{title:string;price?:string;imageUrl?:string;badge?:string}>;
+const cards = [] as Array<{title:string;price?:string;imageUrl?:string;imageSubject?:string;badge?:string}>;
 let columns = 3;
-const hero = { title: '', subtitle: '', primaryCta: '', secondaryCta: '', imageUrl: '' };
-function placeholder(seed: string, w = 640, h = 360) { return \`https://picsum.photos/seed/\${encodeURIComponent(seed)}/\${w}/\${h}\`; }
+const hero = { title: '', subtitle: '', primaryCta: '', secondaryCta: '', imageUrl: '', imageSubject: '' };
+let currentPath = $state('/');
+function nav(e: Event) {
+  const a = e.currentTarget as HTMLAnchorElement | null;
+  const href = (a && a.getAttribute('href')) || '/';
+  if (href.startsWith('/')) { (e as any).preventDefault && (e as any).preventDefault(); currentPath = href; }
+}
+function placeholder(seed: string, w = 640, h = 360) { return 'https://picsum.photos/seed/' + encodeURIComponent(seed) + '/' + w + '/' + h; }
 function safeImage(url?: string | null, seed = 'image', w = 640, h = 360) {
   if (!url || /^url_to_/i.test(url)) return placeholder(seed, w, h);
   try { const u = new URL(url); return u.protocol.startsWith('http') ? url : placeholder(seed, w, h); } catch { return placeholder(seed, w, h); }
@@ -129,11 +145,12 @@ function gridCols(n: number): string {
 <header class="sticky top-0 z-50 bg-background/80 backdrop-blur border-b supports-[backdrop-filter]:bg-background/60">
   <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-6">
     <div class="font-bold">{title}</div>
-    <nav class="flex items-center gap-6">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary">{l.label}</a>{/each}</nav>
+    <nav class="flex items-center gap-6">{#each links as l (l.href)}<a href={l.href} class="text-sm hover:text-primary" onclick={nav}>{l.label}</a>{/each}</nav>
     <div class="text-sm">Cart: {cartCount}</div>
   </div>
 </header>
 
+{#if currentPath === '/'}
 <section class="w-full pt-12 md:pt-16 bg-gradient-to-b from-muted/30 to-transparent">
   <div class="max-w-7xl mx-auto px-4 grid gap-10 md:grid-cols-[1.2fr_0.8fr] items-center">
     <div>
@@ -144,16 +161,16 @@ function gridCols(n: number): string {
         {#if hero.secondaryCta}<button class="px-4 py-2 rounded-md border" onclick={handleSecondary}>{hero.secondaryCta}</button>{/if}
       </div>
     </div>
-    <img src={safeImage(hero.imageUrl, hero.title, 960, 540)} alt="" class="w-full h-[320px] md:h-[420px] object-cover rounded-xl shadow-md" />
+    <img src={safeImage(hero.imageUrl, hero.imageSubject || hero.title, 960, 540)} alt={hero.imageSubject || hero.title} class="w-full h-[320px] md:h-[420px] object-cover rounded-xl shadow-md" />
   </div>
 </section>
 
 <section class="py-12">
   <div class="max-w-7xl mx-auto px-4">
-    <div class={\`grid gap-8 \${gridCols(columns)}\`}>
+    <div class={"grid gap-8 " + gridCols(columns)}>
       {#each cards as c (c.title)}
         <article class="bg-card text-card-foreground rounded-xl border overflow-hidden shadow-sm">
-          <img src={safeImage(c.imageUrl, c.title, 640, 360)} alt="" class="w-full h-48 object-cover" />
+          <img src={safeImage(c.imageUrl, c.imageSubject || c.title, 640, 360)} alt={c.imageSubject || c.title} class="w-full h-48 object-cover" />
           <div class="p-4">
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">{c.title}</h3>
@@ -166,5 +183,13 @@ function gridCols(n: number): string {
       {/each}
     </div>
   </div>
-</section>`;
+</section>
+{:else}
+<section class="py-16">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="text-2xl font-semibold mb-2">{currentPath.replace('/', '').toUpperCase()}</h2>
+    <p class="text-muted-foreground">This is a placeholder for {currentPath}.</p>
+  </div>
+</section>
+{/if}`;
 }
