@@ -178,7 +178,7 @@
 				}
 
 				generatedPreviewHtml = `
-					<div style="padding: 20px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; font-family: system-ui;">
+					<div style="padding: 20px; color: var(--destructive); background: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: system-ui;">
 						<h3 style="margin: 0 0 16px 0; font-size: 18px;">Compilation Error</h3>
 						<div style="margin-bottom: 12px;">
 							<strong>Message:</strong> ${result.error.message}
@@ -187,7 +187,7 @@
 						${result.error.start ? `<div style="margin-bottom: 8px;"><strong>Line:</strong> ${result.error.start.line}, <strong>Column:</strong> ${result.error.start.column}</div>` : ''}
 						<details style="margin-top: 16px;">
 							<summary style="cursor: pointer; font-weight: bold;">Generated Code</summary>
-							<pre style="margin-top: 8px; background: #f9f9f9; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; line-height: 1.4;">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+							<pre style="margin-top: 8px; background: var(--muted); color: var(--muted-foreground); padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; line-height: 1.4;">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
 						</details>
 					</div>
 				`;
@@ -214,12 +214,12 @@
 		} catch (error) {
 			console.error('Failed to compile:', error);
 			const errorHtml = `
-				<div style="padding: 20px; color: #dc2626; font-family: system-ui;">
+				<div style="padding: 20px; color: var(--destructive); background: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: system-ui;">
 					<h3>Compilation Failed</h3>
 					<p><strong>Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}</p>
 					<details style="margin-top: 16px;">
 						<summary style="cursor: pointer; font-weight: bold;">Generated Code</summary>
-						<pre style="margin-top: 8px; background: #f9f9f9; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; line-height: 1.4;">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+						<pre style="margin-top: 8px; background: var(--muted); color: var(--muted-foreground); padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; line-height: 1.4;">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
 					</details>
 				</div>
 			`;

@@ -5,6 +5,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { allPersistKeys, PERSIST_VERSION } from '$lib/utils';
 	import { apiKeyStore } from '$lib/stores/apiKeys';
+	import { Undo2, Redo2, ChevronDown } from '@lucide/svelte';
 	const history = historyStore;
 
 	interface Props {
@@ -140,7 +141,6 @@
 <header class="border-b bg-card px-6 py-4 flex items-center justify-between">
 	<section class="flex items-center gap-4">
 		<h1 class="text-2xl font-bold">AI Svelte Builder</h1>
-		<span class="text-sm text-muted-foreground">v1.0.0</span>
 	</section>
 	<nav class="flex items-center gap-2">
 		<div class="flex items-center gap-1 border-r pr-2 mr-2">
@@ -152,7 +152,7 @@
 				aria-label="Undo last change"
 				title="Undo (⌘Z)"
 			>
-				↶
+				<Undo2 class="size-4" />
 			</Button>
 			<Button
 				variant="ghost"
@@ -162,7 +162,7 @@
 				aria-label="Redo last undone change"
 				title="Redo (⌘⇧Z)"
 			>
-				↷
+				<Redo2 class="size-4" />
 			</Button>
 			<Button variant="outline" size="sm" onclick={toggleHistory} aria-label="Open history"
 				>History</Button
@@ -178,8 +178,13 @@
 				size="sm"
 				onclick={toggleSessionMenu}
 				aria-haspopup="menu"
-				aria-expanded={showSessionMenu ? 'true' : 'false'}>Session ▾</Button
+				aria-expanded={showSessionMenu ? 'true' : 'false'}
 			>
+				<span class="inline-flex items-center gap-1">
+					Session
+					<ChevronDown class="size-4 opacity-80" />
+				</span>
+			</Button>
 			{#if showSessionMenu}
 				<button
 					class="fixed inset-0 z-40"
@@ -222,6 +227,21 @@
 							showSessionMenu = false;
 						}}>{showMetrics ? 'Hide Metrics…' : 'Show Metrics…'}</button
 					>
+					<button
+						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded"
+						role="menuitem"
+						onclick={() => {
+							const root = document.documentElement;
+							const nowDark = !root.classList.contains('dark');
+							root.classList.toggle('dark', nowDark);
+							try {
+								localStorage.setItem('theme', nowDark ? 'dark' : 'light');
+							} catch {}
+							showSessionMenu = false;
+						}}
+					>
+						Toggle Theme
+					</button>
 					<hr class="my-1 opacity-60" />
 					<button
 						class="w-full text-left px-3 py-1.5 hover:bg-muted rounded text-red-600"

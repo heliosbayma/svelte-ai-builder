@@ -32,9 +32,9 @@
 			'const $ = (globalThis).$;\nconst svelte_internal = (globalThis).svelte_internal;\n' +
 			js
 				// Remove any imports from svelte/internal/* with from syntax
-				.replace(/import\s+.*?from\s+["']svelte\/internal\/[^"']+["'];?\n?/g, '')
+				.replace(/import\s+.*?from\s+["']svelte\/internal\/[^"]+["'];?\n?/g, '')
 				// Remove bare imports like: import 'svelte/internal/disclose-version'
-				.replace(/import\s+["']svelte\/internal\/[^"']+["'];?\n?/g, '')
+				.replace(/import\s+["']svelte\/internal\/[^"]+["'];?\n?/g, '')
 				// Remove specific "import * as $ from 'svelte/internal/client'"
 				.replace(/import\s+\*\s+as\s+\$\s+from\s+["']svelte\/internal\/client["'];?\n?/g, '');
 
@@ -97,11 +97,11 @@
 
 			if (!mounted) {
 				appEl.innerHTML =
-					'<div style="padding:12px;color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;border-radius:6px;">Failed to mount component: no default export/function found.</div>';
+					'<div style="padding:12px;color:var(--destructive);background:color-mix(in oklab, var(--destructive) 15%, var(--background));border:1px solid color-mix(in oklab, var(--destructive) 25%, var(--background));border-radius:6px;">Failed to mount component: no default export/function found.</div>';
 			}
 		} catch (err) {
 			const error = err as Error;
-			appEl.innerHTML = `<div style="padding:12px;color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;border-radius:6px;">
+			appEl.innerHTML = `<div style="padding:12px;color:var(--destructive);background:color-mix(in oklab, var(--destructive) 15%, var(--background));border:1px solid color-mix(in oklab, var(--destructive) 25%, var(--background));border-radius:6px;">
         <strong>Runtime error</strong><br/>
         ${error.message}
       </div>`;
@@ -135,7 +135,5 @@
 <div
 	id="app"
 	bind:this={appEl}
-	style="min-height: 100vh;
-  background: #f9fafb;
-"
+	style="min-height: 100vh; background: var(--background); color: var(--foreground);"
 ></div>

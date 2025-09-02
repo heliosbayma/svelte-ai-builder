@@ -488,8 +488,10 @@ export class SvelteCompiler {
 		try {
 			// Preprocess the code to fix common issues
 			const cleanSource = this.preprocessCode(source);
-			console.log('Original source:', source);
-			console.log('Preprocessed source:', cleanSource);
+			if (import.meta.env?.DEV) {
+				console.log('Original source:', source);
+				console.log('Preprocessed source:', cleanSource);
+			}
 			const cssMode = options.css === 'none' ? undefined : (options.css ?? 'injected');
 			const generateMode =
 				options.generate === 'dom'
@@ -506,7 +508,9 @@ export class SvelteCompiler {
 			});
 
 			// Debug: Log the compiled JS structure
-			console.log('Compiled JS (first 500 chars):', result.js.code.substring(0, 500));
+			if (import.meta.env?.DEV) {
+				console.log('Compiled JS (first 500 chars):', result.js.code.substring(0, 500));
+			}
 
 			return {
 				js: result.js.code,
@@ -520,7 +524,9 @@ export class SvelteCompiler {
 
 			try {
 				const smartTemplate = this.createSimpleTemplate(source);
-				console.log('Using smart template:', smartTemplate);
+				if (import.meta.env?.DEV) {
+					console.log('Using smart template:', smartTemplate);
+				}
 
 				const fallbackResult = this.svelteCompiler!.compile(smartTemplate, {
 					filename: options.filename || 'Component.svelte',
@@ -578,11 +584,31 @@ export class SvelteCompiler {
 	${css ? `<style>${css}</style>` : ''}
 	<script src="https://cdn.tailwindcss.com"></script>
 	<style>
+		:root {
+			--background: #f9fafb;
+			--foreground: #111827;
+			--card: #ffffff;
+			--card-foreground: #111827;
+			--popover: #ffffff;
+			--popover-foreground: #111827;
+			--primary: #1d4ed8;
+			--primary-foreground: #ffffff;
+			--secondary: #f3f4f6;
+			--secondary-foreground: #1f2937;
+			--muted: #f3f4f6;
+			--muted-foreground: #6b7280;
+			--accent: #f3f4f6;
+			--accent-foreground: #1f2937;
+			--destructive: #ef4444;
+			--border: #e5e7eb;
+			--input: #e5e7eb;
+			--ring: #94a3b8;
+		}
 		body {
 			margin: 0;
 			padding: 20px;
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-			background: #f9fafb;
+			background: var(--background);
 			min-height: 100vh;
 		}
 		#app {
@@ -627,12 +653,12 @@ export class SvelteCompiler {
 
 				// For now, just render a fallback message since ES module execution is complex
 				target.innerHTML = \`
-					<div style="max-width: 500px; padding: 24px; margin: 20px auto; border: 2px solid #3b82f6; background: #eff6ff; color: #1e40af; border-radius: 8px; font-family: system-ui;">
+					<div style="max-width: 500px; padding: 24px; margin: 20px auto; border: 2px solid var(--primary); background: var(--muted); color: var(--primary-foreground); border-radius: 8px; font-family: system-ui;">
 						<h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Component Preview</h3>
 						<p style="margin: 0 0 12px 0; font-size: 14px;">Component compiled successfully. Advanced rendering coming soon.</p>
 						<details style="margin-top: 16px;">
 							<summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">Raw Component Code</summary>
-							<pre style="margin: 0; padding: 12px; background: #dbeafe; border-radius: 4px; font-size: 12px; overflow-x: auto; white-space: pre-wrap;">\${moduleCode.substring(0, 500)}...</pre>
+							<pre style="margin: 0; padding: 12px; background: var(--accent); color: var(--accent-foreground); border-radius: 4px; font-size: 12px; overflow-x: auto; white-space: pre-wrap;">\${moduleCode.substring(0, 500)}...</pre>
 						</details>
 					</div>
 				\`;
@@ -647,12 +673,12 @@ export class SvelteCompiler {
 		} catch (error) {
 			console.error('Component mounting error:', error);
 			document.getElementById('app').innerHTML = \`
-				<div style="max-width: 500px; padding: 24px; margin: 20px auto; border: 2px solid #f87171; background: #fef2f2; color: #dc2626; border-radius: 8px; font-family: system-ui;">
+				<div style="max-width: 500px; padding: 24px; margin: 20px auto; border: 2px solid var(--destructive); background: var(--muted); color: var(--destructive); border-radius: 8px; font-family: system-ui;">
 					<h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Component Runtime Error</h3>
 					<p style="margin: 0 0 12px 0; font-size: 14px;">The compiled component could not be mounted.</p>
 					<details style="margin-top: 16px;">
 						<summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">Error Details</summary>
-						<pre style="margin: 0; padding: 12px; background: #fee2e2; border-radius: 4px; font-size: 12px; overflow-x: auto; white-space: pre-wrap;">\${error.message}\\n\\nStack: \${error.stack}</pre>
+						<pre style="margin: 0; padding: 12px; background: var(--muted); border-radius: 4px; font-size: 12px; overflow-x: auto; white-space: pre-wrap;">\${(error as any).message}\\n\\nStack: \${(error as any).stack}</pre>
 					</details>
 				</div>
 			\`;

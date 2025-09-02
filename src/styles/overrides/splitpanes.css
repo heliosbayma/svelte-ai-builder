@@ -1,0 +1,82 @@
+/* Splitpanes styles */
+.splitpanes {
+	display: flex;
+	width: 100%;
+	height: 100%;
+}
+
+.splitpanes--vertical {
+	flex-direction: row;
+}
+
+.splitpanes--horizontal {
+	flex-direction: column;
+}
+
+.splitpanes__pane {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Override library default light background */
+.splitpanes.default-theme .splitpanes__pane,
+.default-theme .splitpanes__pane {
+	background: var(--background) !important;
+	color: var(--foreground);
+}
+
+/* TODO: improve hover area and remove important statements in splitpanes css */
+.default-theme.splitpanes--vertical > .splitpanes__splitter,
+.default-theme .splitpanes--vertical > .splitpanes__splitter {
+	width: 1px !important;
+	border: none !important;
+	background: var(--border) !important;
+	cursor: col-resize;
+	transition: all 0.2s ease;
+}
+
+.default-theme.splitpanes--horizontal > .splitpanes__splitter,
+.default-theme .splitpanes--horizontal > .splitpanes__splitter {
+	height: 1px !important;
+	border: none !important;
+	background: var(--border) !important;
+	cursor: row-resize;
+	transition: all 0.2s ease;
+}
+
+.default-theme.splitpanes--vertical > .splitpanes__splitter:hover,
+.default-theme .splitpanes--vertical > .splitpanes__splitter:hover {
+	background: var(--primary) !important;
+	box-shadow: 0 0 8px var(--primary);
+	opacity: 0.8;
+}
+
+.default-theme.splitpanes--horizontal > .splitpanes__splitter:hover,
+.default-theme .splitpanes--horizontal > .splitpanes__splitter:hover {
+	background: var(--primary) !important;
+	box-shadow: 0 0 8px var(--primary);
+	opacity: 0.8;
+}
+
+.default-theme.splitpanes--vertical > .splitpanes__splitter::before,
+.default-theme .splitpanes--vertical > .splitpanes__splitter::before {
+	content: '';
+	position: absolute;
+	left: -8px;
+	top: 0;
+	right: -8px;
+	bottom: 0;
+	z-index: 2;
+}
+
+.default-theme.splitpanes--horizontal > .splitpanes__splitter::before,
+.default-theme .splitpanes--horizontal > .splitpanes__splitter::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: -8px;
+	right: 0;
+	bottom: -8px;
+	z-index: 2;
+}
