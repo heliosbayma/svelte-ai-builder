@@ -1,0 +1,14 @@
+node_modules
+pnpm-store
+.git
+.gitignore
+.vscode
+.DS_Store
+.env
+.env.*
+dist
+build
+build-cache
+coverage
+.playwright
+**/*.log

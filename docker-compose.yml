@@ -1,0 +1,22 @@
+services:
+  web:
+    build:
+      context: .
+      target: dev
+    image: svelte-ai-builder:dev
+    platform: linux/amd64
+    command: pnpm dev -- --host 0.0.0.0
+    ports:
+      - '5173:5173'
+    environment:
+      CHOKIDAR_USEPOLLING: '1'
+      HOST: 0.0.0.0
+      PORT: 5173
+      ROLLUP_DISABLE_NATIVE: '1'
+      ROLLUP_SKIP_NODEJS_NATIVE: '1'
+    volumes:
+      - .:/app
+      - /app/node_modules  # Exclude node_modules from host mount to prevent platform conflicts
+      - pnpm-store:/root/.local/share/pnpm/store
+volumes:
+  pnpm-store:

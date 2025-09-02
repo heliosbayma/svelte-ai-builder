@@ -2,7 +2,7 @@
 
 Transform natural language prompts into Svelte components using AI with real-time preview.
 
-## Setup
+## Run locally (no Docker)
 
 ```bash
 git clone <repository-url>
@@ -12,6 +12,21 @@ pnpm dev
 ```
 
 Open <http://localhost:5173>
+
+## Run with Docker (one-command)
+
+Prerequisites: Docker Desktop.
+
+```bash
+pnpm run dev:docker
+```
+
+Open <http://localhost:5173>.
+
+Notes:
+
+- The dev container targets linux/amd64 for maximum portability across hosts.
+- If Docker fails on a reviewer machine, use the non-Docker path above.
 
 ## API Keys
 
