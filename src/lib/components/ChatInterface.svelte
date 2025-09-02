@@ -174,7 +174,7 @@
 			JSON.parse(raw);
 			pendingPlan = raw;
 			chatStore.addMessage({ role: 'assistant', content: pendingPlan });
-		} catch (err) {
+		} catch {
 			chatStore.addMessage({
 				role: 'assistant',
 				content: 'Plan failed with selected model. Retrying with default model…'
@@ -222,7 +222,7 @@
 			});
 			chatStore.addMessage({ role: 'assistant', content: res.content });
 			onCodeGenerated?.(res.content, 'Build from plan', provider);
-		} catch (err) {
+		} catch {
 			chatStore.addMessage({
 				role: 'assistant',
 				content: 'Build failed with selected model. Retrying with default model…'

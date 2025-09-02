@@ -40,7 +40,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each Object.entries(providerSummary) as [provider, g]}
+							{#each Object.entries(providerSummary) as [provider, g] (provider)}
 								<tr class="border-t">
 									<td class="py-1 pr-2">{provider}</td>
 									<td class="py-1 pr-2 text-right">{g.count}</td>
