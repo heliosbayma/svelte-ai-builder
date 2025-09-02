@@ -13,12 +13,16 @@ pnpm dev
 
 Open <http://localhost:5173>
 
-## Run with Docker (one-command)
+## Run with Docker
 
 Prerequisites: Docker Desktop.
 
 ```bash
+# With pnpm installed:
 pnpm run dev:docker
+
+# Without pnpm (Docker only):
+docker compose up --build
 ```
 
 Open <http://localhost:5173>.
@@ -26,6 +30,7 @@ Open <http://localhost:5173>.
 Notes:
 
 - The dev container targets linux/amd64 for maximum portability across hosts.
+- Uses WASM-based Rollup for cross-platform compatibility
 - If Docker fails on a reviewer machine, use the non-Docker path above.
 
 ## API Keys
