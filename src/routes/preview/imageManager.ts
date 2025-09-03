@@ -1,5 +1,5 @@
 export class ImageManager {
-	setupImageFallbacks(root: HTMLElement) {
+	setupImageFallbacks(root: HTMLElement): () => void {
 		try {
 			this.applyImgFallbacks(root);
 			const observer = new MutationObserver((mutations) => {
@@ -13,16 +13,21 @@ export class ImageManager {
 				}
 			});
 			observer.observe(root, { childList: true, subtree: true });
+			return () => {
+				try {
+					observer.disconnect();
+				} catch {}
+			};
 		} catch (error) {
 			console.warn('Failed to setup image fallbacks:', error);
+			return () => {};
 		}
 	}
 
 	private applyImgFallbacks(root: HTMLElement | Document) {
 		const imgs = root.querySelectorAll('img');
 		imgs.forEach((img) => {
-			if ((img as HTMLElement).dataset && (img as HTMLElement).dataset.fallbackApplied)
-				return;
+			if ((img as HTMLElement).dataset && (img as HTMLElement).dataset.fallbackApplied) return;
 			img.addEventListener('error', () => {
 				const el = img as HTMLImageElement & { dataset: DOMStringMap };
 				if (el.dataset.fallbackApplied) return;

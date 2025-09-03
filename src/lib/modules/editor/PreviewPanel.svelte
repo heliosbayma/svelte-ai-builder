@@ -24,11 +24,15 @@
 	let mountAttempts = 0;
 	let lastCompiledJs = '';
 	let hasFatalMountError = $state(false);
+	let targetOrigin: string | null = null;
 
 	function postTheme() {
 		const isDark = document.documentElement.classList.contains('dark');
 		try {
-			iframeRef?.contentWindow?.postMessage({ type: 'apply-theme', dark: isDark }, '*');
+			iframeRef?.contentWindow?.postMessage(
+				{ type: 'apply-theme', dark: isDark },
+				targetOrigin || '*'
+			);
 		} catch {}
 	}
 
@@ -57,7 +61,7 @@
 
 		if (!iframeReady || !iframeRef?.contentWindow) {
 			try {
-				iframeRef?.contentWindow?.postMessage({ type: 'ping' }, '*');
+				iframeRef?.contentWindow?.postMessage({ type: 'ping' }, targetOrigin || '*');
 			} catch {}
 		}
 
@@ -81,6 +85,7 @@
 	}
 
 	function handleFrameMessage(event: MessageEvent) {
+		if (targetOrigin === null && event.origin) targetOrigin = event.origin;
 		if (event.data?.type === 'preview-ready') {
 			iframeReady = true;
 			postTheme();
@@ -125,7 +130,7 @@
 
 	function postToIframe(message: object): boolean {
 		if (!iframeRef?.contentWindow) return false;
-		iframeRef.contentWindow.postMessage(message, '*');
+		iframeRef.contentWindow.postMessage(message, targetOrigin || '*');
 		return true;
 	}
 
@@ -191,7 +196,7 @@
 			class="w-full h-full bg-background"
 			title="Component Preview"
 			src="/preview"
-			sandbox="allow-scripts allow-same-origin allow-forms"
+			sandbox="allow-scripts allow-same-origin"
 			onload={() => {
 				iframeReady = false;
 				isMounted = false;
@@ -201,7 +206,7 @@
 				mountAttemptId = null;
 				mountAttempts = 0;
 				try {
-					iframeRef?.contentWindow?.postMessage({ type: 'ping' }, '*');
+					iframeRef?.contentWindow?.postMessage({ type: 'ping' }, targetOrigin || '*');
 					postTheme();
 				} catch {}
 			}}

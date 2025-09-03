@@ -8,25 +8,49 @@
 	//
 	// @ts-ignore - internal client has no public types
 	import * as svelteClient from 'svelte/internal/client';
-	import { onMount, mount as svelteMount } from 'svelte';
+	import { onMount } from 'svelte';
+	import { MountManager } from './mountStrategies';
+	import { CSSManager } from './cssManager';
+	import { ImageManager } from './imageManager';
 
 	let appEl: HTMLDivElement | null = null;
+	const mountManager = new MountManager();
+	const cssManager = new CSSManager();
+	const imageManager = new ImageManager();
+	let lastCleanup: (() => void) | null = null;
+	let imageCleanup: (() => void) | null = null;
+	let mountSeq = 0;
+	let allowedParentOrigin: string | null = null;
+	let mountDebounceId: ReturnType<typeof setTimeout> | null = null;
+	let pendingMount: { js: string; css?: string } | null = null;
+
+	function escapeHtml(input: unknown): string {
+		const s = String(input ?? '');
+		return s.replace(
+			/[&<>"']/g,
+			(ch) =>
+				(({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }) as const)[ch] ||
+				ch
+		);
+	}
 
 	async function mountCompiled(js: string, css?: string) {
+		const seq = ++mountSeq;
 		if (!appEl) return;
 
-		// Clear previous content
+		// Cleanup previous content and observers
+		try {
+			lastCleanup?.();
+		} catch {}
+		lastCleanup = null;
+		try {
+			imageCleanup?.();
+		} catch {}
+		imageCleanup = null;
 		appEl.innerHTML = '';
 
 		// Inject CSS if provided
-		if (css) {
-			const existing = document.getElementById('preview-inline-style');
-			if (existing) existing.remove();
-			const style = document.createElement('style');
-			style.id = 'preview-inline-style';
-			style.textContent = css;
-			document.head.appendChild(style);
-		}
+		if (css) cssManager.inject(css);
 
 		// Expose runtime on globals and inject aliases for module scope
 		(globalThis as any).$ = svelteClient as unknown as object;
@@ -37,82 +61,63 @@
 			js
 				// Strip any svelte/internal imports (line-anchored, both quotes)
 				.replace(/^import\s+.*?from\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '')
-				.replace(/^import\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '');
+				.replace(/^import\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '') +
+			'\n//# sourceURL=preview://compiled.js';
 
+		let url: string | null = null;
 		try {
 			const blob = new Blob([transformed], { type: 'text/javascript' });
-			const url = URL.createObjectURL(blob);
+			url = URL.createObjectURL(blob);
 			const mod: any = await import(/* @vite-ignore */ url);
-			URL.revokeObjectURL(url);
 			const Component = mod?.default ?? mod;
 
-			let mounted = false;
-			if (typeof Component === 'function') {
-				const defaultProps = {};
+			// Ignore stale mount if a newer one started meanwhile
+			if (seq !== mountSeq) return;
 
-				const ensureCleanTarget = () => {
-					if (appEl) appEl.innerHTML = '';
-				};
-
-				const mountStrategies = [
-					{
-						name: 'Svelte 5 runtime mount API',
-						fn: () => {
-							if (!appEl) throw new Error('Target element not found');
-							return svelteMount(Component as any, { target: appEl, props: defaultProps });
-						}
-					},
-					{
-						name: 'Internal mount API',
-						fn: () =>
-							(svelteClient as any).mount?.(Component, { target: appEl, props: defaultProps })
-					},
-					{
-						name: 'Constructor style (Svelte 4/compat)',
-						fn: () => new (Component as any)({ target: appEl, props: defaultProps })
-					}
-				];
-
-				for (const strategy of mountStrategies) {
-					try {
-						ensureCleanTarget();
-						strategy.fn();
-						mounted = true;
-						break;
-					} catch (error) {
-						console.error(`${strategy.name} failed:`, error);
-					}
-				}
-
-				if (!mounted) {
-					console.error('All mount strategies failed');
+			if (typeof Component === 'function' && appEl) {
+				const result = await mountManager.mountComponent(Component as any, appEl, {});
+				if (!result.success) {
 					try {
 						window.parent?.postMessage(
 							{ type: 'mount-error', error: 'All strategies failed' },
-							'*'
+							allowedParentOrigin && allowedParentOrigin !== 'null' ? allowedParentOrigin : '*'
 						);
 					} catch {}
-				} else {
-					try {
-						window.parent?.postMessage({ type: 'mounted' }, '*');
-					} catch {}
+					return;
 				}
+				lastCleanup = result.cleanup ?? null;
+				try {
+					imageCleanup = imageManager.setupImageFallbacks(appEl);
+				} catch {}
+				try {
+					window.parent?.postMessage(
+						{ type: 'mounted' },
+						allowedParentOrigin && allowedParentOrigin !== 'null' ? allowedParentOrigin : '*'
+					);
+				} catch {}
 			}
 		} catch (err) {
-			const error = err as Error;
-			appEl.innerHTML = `<div style="padding:12px;color:var(--destructive);background:color-mix(in oklab, var(--destructive) 15%, var(--background));border:1px solid color-mix(in oklab, var(--destructive) 25%, var(--background));border-radius:6px;">
+			const msg = escapeHtml((err as Error)?.message || err);
+			if (appEl) {
+				appEl.innerHTML = `<div style="padding:12px;color:var(--destructive);background:color-mix(in oklab, var(--destructive) 15%, var(--background));border:1px solid color-mix(in oklab, var(--destructive) 25%, var(--background));border-radius:6px;">
         <strong>Runtime error</strong><br/>
-        ${error.message}
+        ${msg}
       </div>`;
-			console.error('Preview runtime error:', error);
+			}
 			try {
-				window.parent?.postMessage({ type: 'mount-error', error: error.message }, '*');
+				window.parent?.postMessage(
+					{ type: 'mount-error', error: String(msg) },
+					allowedParentOrigin && allowedParentOrigin !== 'null' ? allowedParentOrigin : '*'
+				);
 			} catch {}
+		} finally {
+			if (url) URL.revokeObjectURL(url);
 		}
 	}
 
 	function handleMessage(event: MessageEvent) {
 		try {
+			if (!allowedParentOrigin) allowedParentOrigin = event.origin || null;
 			if (event.origin && event.origin !== window.origin && event.origin !== 'null') return;
 		} catch {}
 		const data = event.data as {
@@ -125,13 +130,23 @@
 		if (!data || !data.type) return;
 		if (data.type === 'ping') {
 			try {
-				window.parent?.postMessage({ type: 'preview-ready' }, '*');
+				window.parent?.postMessage(
+					{ type: 'preview-ready' },
+					allowedParentOrigin && allowedParentOrigin !== 'null' ? allowedParentOrigin : '*'
+				);
 			} catch {}
 			return;
 		}
 		if (data.type === 'mount') {
 			if (typeof data.js !== 'string') return;
-			mountCompiled(data.js, data.css);
+			pendingMount = { js: data.js, css: data.css };
+			if (mountDebounceId) clearTimeout(mountDebounceId);
+			mountDebounceId = setTimeout(() => {
+				mountDebounceId = null;
+				const payload = pendingMount;
+				pendingMount = null;
+				if (payload) mountCompiled(payload.js, payload.css);
+			}, 16);
 			return;
 		}
 		if (data.type === 'apply-theme') {
@@ -182,7 +197,10 @@
 
 		window.addEventListener('message', handleMessage);
 		try {
-			window.parent?.postMessage({ type: 'preview-ready' }, '*');
+			window.parent?.postMessage(
+				{ type: 'preview-ready' },
+				allowedParentOrigin && allowedParentOrigin !== 'null' ? allowedParentOrigin : '*'
+			);
 		} catch {}
 		try {
 			if (appEl) {

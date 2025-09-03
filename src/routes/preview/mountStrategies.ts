@@ -6,6 +6,11 @@ export interface MountStrategy {
 	fn: (Component: SvelteComponent, target: HTMLElement, props: Record<string, unknown>) => unknown;
 }
 
+export interface MountResult {
+	success: boolean;
+	cleanup?: () => void;
+}
+
 export class MountManager {
 	private strategies: MountStrategy[] = [
 		{
@@ -29,18 +34,30 @@ export class MountManager {
 		}
 	];
 
-	async mountComponent(Component: SvelteComponent, target: HTMLElement, props: Record<string, unknown> = {}): Promise<boolean> {
+	async mountComponent(
+		Component: SvelteComponent,
+		target: HTMLElement,
+		props: Record<string, unknown> = {}
+	): Promise<MountResult> {
 		for (const strategy of this.strategies) {
 			try {
 				this.ensureCleanTarget(target);
-				strategy.fn(Component, target, props);
+				const result: any = strategy.fn(Component, target, props);
+				const cleanup =
+					typeof result?.destroy === 'function'
+						? () => result.destroy()
+						: typeof result?.unmount === 'function'
+							? () => result.unmount()
+							: typeof result?.$destroy === 'function'
+								? () => result.$destroy()
+								: undefined;
 				console.log(`${strategy.name} succeeded`);
-				return true;
+				return { success: true, cleanup };
 			} catch (error) {
 				console.error(`${strategy.name} failed:`, error);
 			}
 		}
-		return false;
+		return { success: false };
 	}
 
 	private ensureCleanTarget(target: HTMLElement) {
