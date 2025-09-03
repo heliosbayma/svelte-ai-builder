@@ -51,7 +51,7 @@
 			aria-hidden="true"
 		></div>
 		<aside
-			class="absolute right-0 top-0 mt-[65px] mr-4 mb-4 h-[calc(100vh-82px)] w-[360px] bg-card/80 border shadow-xl rounded-lg overflow-auto backdrop-blur-sm animate-slide-in-right"
+			class="absolute right-0 top-0 bg-card/80 border shadow-xl overflow-auto backdrop-blur-sm w-full h-full rounded-none animate-fade-in sm:mt-[65px] sm:mr-4 sm:mb-4 sm:h-[calc(100vh-82px)] sm:w-[360px] sm:rounded-lg sm:animate-slide-in-right"
 			aria-labelledby="history-title"
 		>
 			<header class="p-4 border-b flex items-center justify-between">

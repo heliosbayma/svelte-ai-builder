@@ -9,13 +9,15 @@
 	import { apiKeyStore, apiKeysReady } from '$lib/core/stores/apiKeys';
 	import { modalStore } from '$lib/core/stores/modals';
 	import { t } from '$lib/shared/i18n';
+	import { chatSessionsStore } from '$lib/core/stores/chatSessions';
 
 	interface Props {
 		onCodeGenerated?: (code: string, prompt: string, provider: LLMProviderType) => void;
 		onStartGenerating?: () => void;
+		showMessages?: boolean;
 	}
 
-	let { onCodeGenerated, onStartGenerating }: Props = $props();
+	let { onCodeGenerated, onStartGenerating, showMessages = true }: Props = $props();
 
 	// Structured input state
 	const input = (() => {
@@ -101,6 +103,25 @@
 	});
 	// handlePlan available for future use
 
+	let inputContainer: HTMLDivElement | null = null;
+
+	function setInputHeightVar() {
+		if (!inputContainer) return;
+		const h = inputContainer.getBoundingClientRect().height;
+		document.documentElement.style.setProperty('--chat-input-h', `${Math.round(h)}px`);
+	}
+
+	$effect(() => {
+		setInputHeightVar();
+		const ro = new ResizeObserver(() => setInputHeightVar());
+		if (inputContainer) ro.observe(inputContainer);
+		window.addEventListener('resize', setInputHeightVar);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', setInputHeightVar);
+		};
+	});
+
 	function savePersistence() {
 		chatUiPersist.save({
 			lastModel: input.modelInput || undefined,
@@ -148,6 +169,13 @@
 		const provider = (message?.provider || 'openai') as LLMProviderType;
 		onCodeGenerated?.(code, prompt, provider);
 	}
+
+	// Save messages back to current session whenever they change (avoid loops while generating)
+	$effect(() => {
+		if (!$chat.isGenerating) {
+			chatSessionsStore.setMessagesForCurrent($chat.messages);
+		}
+	});
 
 	function handleRefine(messageId: string) {
 		const messageIndex = $chat.messages.findIndex((m) => m.id === messageId);
@@ -209,26 +237,39 @@
 			>
 		</div>
 	{/if}
-	<ChatScrollArea
-		messages={$chat.messages}
-		isGenerating={$chat.isGenerating}
-		onUseCode={handleUseCode}
-		onRefine={handleRefine}
-	/>
+	<!-- Conversation list -->
+	{#if showMessages}
+		<div class="flex-1 min-h-0">
+			<ChatScrollArea
+				messages={$chat.messages}
+				isGenerating={$chat.isGenerating}
+				onUseCode={handleUseCode}
+				onRefine={handleRefine}
+				class="flex-1 min-h-0 pb-20 sm:pb-0"
+			/>
+		</div>
+	{/if}
 
-	<ChatInput
-		currentPrompt={input.currentPrompt}
-		isGenerating={$chat.isGenerating}
-		sendOnEnter={input.sendOnEnter}
-		modelInput={input.modelInput}
-		pendingPlan={input.pendingPlan}
-		lastProvider={input.lastProvider}
-		onPromptChange={handlePromptChange}
-		{onSubmit}
-		onCancel={handleCancel}
-		{onBuildFromPlan}
-		onSendOnEnterChange={handleSendOnEnterChange}
-		onModelChange={handleModelChange}
-		onProviderChange={handleProviderChange}
-	/>
+	<div
+		bind:this={inputContainer}
+		class="fixed left-0 right-0 bottom-0 z-40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-t px-0 sm:sticky sm:left-auto sm:right-auto sm:bottom-0 sm:z-10"
+		data-chat-input
+	>
+		<ChatInput
+			currentPrompt={input.currentPrompt}
+			isGenerating={$chat.isGenerating}
+			sendOnEnter={input.sendOnEnter}
+			modelInput={input.modelInput}
+			pendingPlan={input.pendingPlan}
+			lastProvider={input.lastProvider}
+			onPromptChange={handlePromptChange}
+			{onSubmit}
+			onCancel={handleCancel}
+			{onBuildFromPlan}
+			onSendOnEnterChange={handleSendOnEnterChange}
+			onModelChange={handleModelChange}
+			onProviderChange={handleProviderChange}
+		/>
+		<div class="h-[max(env(safe-area-inset-bottom),0px)]"></div>
+	</div>
 </main>

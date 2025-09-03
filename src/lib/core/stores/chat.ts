@@ -100,6 +100,8 @@ function createChatStore() {
 
 	return {
 		subscribe,
+		/** Snapshot accessor */
+		getState: () => get({ subscribe }),
 
 		addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
 			const chatMessage: ChatMessage = {
@@ -184,6 +186,18 @@ function createChatStore() {
 		clear: () => {
 			set(initialState);
 			persist.clear();
+		},
+
+		/** Replace messages when switching sessions. */
+		replaceMessages: (messages: ChatMessage[]) => {
+			const next: ChatState = {
+				messages: messages.slice(0, 1000),
+				isGenerating: false,
+				currentProvider: null,
+				currentRequestId: null
+			};
+			set(next);
+			persist.save(next);
 		},
 
 		// For undo/redo system - get messages with generated code

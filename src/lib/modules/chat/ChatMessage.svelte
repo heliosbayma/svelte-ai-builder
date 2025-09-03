@@ -131,7 +131,7 @@
 </script>
 
 <article
-	class="{message.role === 'user' ? 'mb-3' : 'mb-8'} flex {message.role === 'user'
+	class="{message.role === 'user' ? 'mb-2 sm:mb-3' : 'mb-4 sm:mb-8'} flex {message.role === 'user'
 		? 'justify-end'
 		: 'justify-start'} w-full {message.role === 'user' ? 'order-2' : 'order-1'} @container"
 	aria-label={message.role === 'user' ? t('chat.userMessage') : t('chat.assistantMessage')}
@@ -182,7 +182,7 @@
 				<!-- Code generation result -->
 				<section class="space-y-1" aria-labelledby={`code-header-${message.id}`}>
 					<header
-						class="flex items-center justify-end gap-2 text-sm text-muted-foreground"
+						class="hidden sm:flex items-center justify-end gap-2 text-sm text-muted-foreground"
 						id={`code-header-${message.id}`}
 					>
 						<div class="flex items-center gap-2 flex-shrink-0 text-xs">
@@ -231,7 +231,7 @@
 				<!-- Regular AI text response -->
 				<section class="space-y-2" aria-labelledby={`text-header-${message.id}`}>
 					<header
-						class="flex items-center justify-end gap-2 text-sm text-muted-foreground mb-2"
+						class="hidden sm:flex items-center justify-end gap-2 text-sm text-muted-foreground mb-2"
 						id={`text-header-${message.id}`}
 					>
 						<div class="flex items-center gap-2 flex-shrink-0 text-xs">

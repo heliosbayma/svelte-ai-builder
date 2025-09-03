@@ -85,8 +85,7 @@
 		onPromptChange(currentPrompt);
 	});
 
-	const charCount = $derived(currentPrompt.length);
-	const lineCount = $derived(currentPrompt ? currentPrompt.split('\n').length : 0);
+	// Counters removed for cleaner mobile UI
 
 	function labelForProvider(key: 'openai' | 'anthropic' | 'gemini'): string {
 		const p = LLM_PROVIDERS.find((p) => p.key === key);
@@ -96,31 +95,96 @@
 
 <form
 	onsubmit={handleSubmit}
-	class="p-4 space-y-3 max-w-full overflow-hidden"
+	class="p-4 space-y-3 max-w-full overflow-hidden sm:block"
 	aria-label={t('chat.inputForm')}
 >
-	<fieldset>
-		<legend class="sr-only">Send message to generate Svelte component</legend>
-		<div class="mt-1 text-[11px] text-slate-500 flex items-center justify-end gap-2">
-			<span>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
-			<span>•</span>
-			<span>{charCount} chars</span>
+	<!-- Mobile layout -->
+	<div class="sm:hidden space-y-2">
+		<!-- Header row with model and X button -->
+		<div class="flex items-center justify-between">
+			<select
+				class="text-xs bg-transparent text-muted-foreground border-0 outline-none focus:outline-none focus:ring-0 hover:text-foreground cursor-pointer appearance-none"
+				value={modelInput}
+				onchange={handleModelChange}
+				disabled={isGenerating}
+				aria-label={t('chat.modelOverride')}
+				title={t('chat.modelOverride')}
+			>
+				<option value="">{t('chat.autoModel')}</option>
+				<optgroup label={labelForProvider('openai')}>
+					<option value="gpt-4o">{t('models.openai.gpt-4o')}</option>
+					<option value="gpt-4o-mini">{t('models.openai.gpt-4o-mini')}</option>
+				</optgroup>
+				<optgroup label={labelForProvider('anthropic')}>
+					<option value="claude-3-5-sonnet-20241022"
+						>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
+					>
+					<option value="claude-3-5-haiku-20241022"
+						>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
+					>
+				</optgroup>
+				<optgroup label={labelForProvider('gemini')}>
+					<option value="gemini-1.5-pro-latest">{t('models.gemini.gemini-1_5-pro-latest')}</option>
+					<option value="gemini-1.5-flash-latest"
+						>{t('models.gemini.gemini-1_5-flash-latest')}</option
+					>
+				</optgroup>
+			</select>
+			{#if isGenerating}
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={onCancel}
+					class="h-6 w-6 p-0"
+					aria-label={t('a11y.cancelGeneration')}
+				>
+					<X class="w-4 h-4" />
+				</Button>
+			{/if}
 		</div>
-		<Textarea
-			bind:value={currentPrompt}
-			onkeydown={handleKeydown}
-			oninput={autoGrow}
-			placeholder={t('chat.placeholder')}
-			class="w-full min-h-[60px] max-h-[200px] resize-none"
-			style="max-width: 100%; overflow-x: hidden; word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;"
-			disabled={isGenerating}
-			aria-label={t('chat.inputLabel')}
-			data-chat-textarea
-		/>
-	</fieldset>
+		<!-- Single line input with send button -->
+		<div class="flex items-center gap-2">
+			<input
+				type="text"
+				bind:value={currentPrompt}
+				onkeydown={handleKeydown}
+				placeholder={t('chat.placeholder')}
+				class="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm"
+				disabled={isGenerating}
+				aria-label={t('chat.inputLabel')}
+			/>
+			<Button
+				type="submit"
+				size="sm"
+				disabled={!currentPrompt.trim() || isGenerating}
+				class="h-10 w-10 p-0"
+				aria-label={t('actions.send')}
+			>
+				<Send class="w-4 h-4" />
+			</Button>
+		</div>
+	</div>
 
-	<!-- Action rows -->
-	<div class="flex flex-wrap items-center justify-between gap-2">
+	<!-- Desktop layout (unchanged) -->
+	<div class="hidden sm:block">
+		<fieldset>
+			<legend class="sr-only">Send message to generate Svelte component</legend>
+			<Textarea
+				bind:value={currentPrompt}
+				onkeydown={handleKeydown}
+				oninput={autoGrow}
+				placeholder={t('chat.placeholder')}
+				class="w-full min-h-[60px] max-h-[200px] resize-none"
+				style="max-width: 100%; overflow-x: hidden; word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;"
+				disabled={isGenerating}
+				aria-label={t('chat.inputLabel')}
+				data-chat-textarea
+			/>
+		</fieldset>
+	</div>
+
+	<!-- Action rows (desktop only) -->
+	<div class="hidden sm:flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2">
 			{#if isGenerating}
 				<Button

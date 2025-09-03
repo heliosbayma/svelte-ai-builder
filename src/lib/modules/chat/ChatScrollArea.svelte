@@ -10,9 +10,17 @@
 		onUseCode: (code: string) => void;
 		onRefine: (messageId: string) => void;
 		onRetry?: (messageId: string) => void;
+		class?: string;
 	}
 
-	let { messages, isGenerating, onUseCode, onRefine, onRetry }: Props = $props();
+	let {
+		messages,
+		isGenerating,
+		onUseCode,
+		onRefine,
+		onRetry,
+		class: className = ''
+	}: Props = $props();
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
 
@@ -87,7 +95,7 @@
 <section
 	bind:this={chatContainer}
 	onscroll={handleScroll}
-	class="relative flex-1 overflow-y-auto p-4 scroll-smooth"
+	class="relative flex-1 overflow-y-auto p-4 scroll-smooth {className}"
 	role="log"
 	aria-live="polite"
 	aria-busy={isGenerating ? 'true' : 'false'}

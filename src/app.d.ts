@@ -10,4 +10,12 @@ declare global {
 	}
 }
 
+// Ambient module declarations for PrismJS dynamic imports
+declare module 'prismjs';
+declare module 'prism-svelte';
+declare module 'prismjs/components/prism-markup';
+declare module 'prismjs/components/prism-javascript';
+declare module 'prismjs/components/prism-css';
+declare module 'prismjs/themes/prism-tomorrow.css';
+
 export {};

@@ -63,11 +63,23 @@
 	}
 </script>
 
-<header class="px-6 py-4 flex items-center justify-between">
-	<section class="flex items-center gap-4">
-		<h1 class="text-xl font-bold">{t('header.title')}</h1>
+<header class="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between">
+	<section class="flex items-center gap-2">
+		<h1 class="text-sm sm:text-base font-semibold leading-none tracking-tight">
+			{t('header.title')}
+		</h1>
 	</section>
-	<nav class="flex items-center gap-3">
+	<nav class="flex items-center gap-2.5">
+		<!-- Chats button (opens sessions panel) -->
+		<Button
+			variant="ghost"
+			size="sm"
+			onclick={() => modalStore.open('sessionMenu')}
+			aria-label="Chats"
+			title="Chats"
+		>
+			<span class="sr-only">Chats</span>
+		</Button>
 		<div class="flex items-center gap-1">
 			<Button
 				variant="ghost"
@@ -91,7 +103,7 @@
 			</Button>
 		</div>
 
-		<div class="w-px h-6 bg-border"></div>
+		<div class="w-px h-5 bg-border"></div>
 
 		<Button
 			variant="ghost"
