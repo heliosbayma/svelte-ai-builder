@@ -52,17 +52,68 @@ export function createChatHandlers(options: ChatHandlerOptions) {
 
 			const controller = new AbortController();
 			chatStore.registerRequest(requestId, controller);
-			const response = await llmClient.generateComponent(
-				trimmedPrompt,
-				{
+			// Heuristic: only use plan->build when starting fresh or explicitly asked.
+			const hasExisting = !!(previousCode && previousCode.trim());
+			const wantsFresh =
+				/\b(start over|from scratch|new (app|project|page|dashboard)|rebuild|reset|scaffold|plan)\b/i.test(
+					trimmedPrompt
+				);
+			const complexUiKeywords =
+				/dashboard|sidebar|drawer|modal|sheet|tabs|accordion|stepper|wizard|toast|tooltip|popover|menu|breadcrumb|header|footer|navbar|table|datagrid|list|grid|card|cards|hero|pricing|settings|profile|auth|login|signup|form|filters?|chart|graphs?|sparkline|kpi|metrics|gallery|carousel|map|calendar|kanban|inbox|chat|feed|activity|notifications?|search|results?|pagination|infinite|routes?/i;
+			const shouldPlan = (!hasExisting && complexUiKeywords.test(trimmedPrompt)) || wantsFresh;
+			let response;
+			if (shouldPlan) {
+				const planRes = await llmClient.planPage(trimmedPrompt, {
 					provider,
 					apiKey: apiKeys[provider]!,
 					model: modelInput || undefined,
-					signal: controller.signal,
-					purpose: 'generate'
-				},
-				previousCode
-			);
+					purpose: 'plan'
+				});
+				let plan = planRes.content?.trim() || '';
+				plan = plan
+					.replace(/^```[a-zA-Z]*\n?/, '')
+					.replace(/```$/, '')
+					.trim();
+
+				// Inject stylePack based on prompt keywords
+				try {
+					const lower = trimmedPrompt.toLowerCase();
+					let pack: 'premium' | 'neutral' | 'marketing' | undefined;
+					if (/minimal|neutral|agency|clean|linear|stripe|vercel/.test(lower)) pack = 'neutral';
+					else if (/marketing|hero|landing|promo|event/.test(lower)) pack = 'marketing';
+					else pack = 'premium';
+					const planJson = JSON.parse(plan || '{}');
+					planJson.theme = planJson.theme || {};
+					planJson.theme.stylePack = pack;
+					plan = JSON.stringify(planJson);
+				} catch {}
+
+				// Try using deterministic plan renderer locally to avoid LLM variance
+				try {
+					const { PlanRenderer } = await import('$lib/core/compiler/templates/PlanRenderer');
+					const component = PlanRenderer.renderFromPlan(plan);
+					response = { content: component } as any;
+				} catch {
+					response = await llmClient.buildPageFromPlan(plan, {
+						provider,
+						apiKey: apiKeys[provider]!,
+						model: modelInput || undefined,
+						purpose: 'build'
+					});
+				}
+			} else {
+				response = await llmClient.generateComponent(
+					trimmedPrompt,
+					{
+						provider,
+						apiKey: apiKeys[provider]!,
+						model: modelInput || undefined,
+						signal: controller.signal,
+						purpose: 'generate'
+					},
+					previousCode
+				);
+			}
 
 			// Guard late results for canceled/replaced requests
 			if (get(chatStore).currentRequestId !== requestId) return;

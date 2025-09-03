@@ -1,8 +1,10 @@
 import type { LLMMessage, LLMResponse, LLMOptions, LLMProviderType } from './types';
 import {
 	SYSTEM_PROMPT,
+	DESIGNER_PROMPT,
 	createComponentPrompt,
 	createRepairPrompt,
+	createRepairPromptDiff,
 	PLAN_PROMPT,
 	createBuildFromPlanPrompt
 } from './prompts';
@@ -28,7 +30,7 @@ export class LLMClient {
 		previousCode?: string
 	): Promise<LLMResponse> {
 		// Apply research finding: model-specific system prompts
-		const modelSpecificPrompt = this.getModelSpecificPrompt();
+		const modelSpecificPrompt = this.getModelSpecificPrompt(prompt);
 		const userPrompt = createComponentPrompt(prompt, previousCode);
 
 		const messages: LLMMessage[] = [
@@ -37,7 +39,11 @@ export class LLMClient {
 		];
 
 		if (options.onStream) {
-			return this.streamHandler.handleStreamResponse(messages, options, this.makeRequest.bind(this));
+			return this.streamHandler.handleStreamResponse(
+				messages,
+				options,
+				this.makeRequest.bind(this)
+			);
 		}
 		return this.chat(messages, { ...options, purpose: options.purpose || 'generate' });
 	}
@@ -110,7 +116,15 @@ export class LLMClient {
 		}
 	}
 
-	// One-shot repair helper consumers can call: given a prompt, broken code and compiler error, ask the model to fix
+	private getModelSpecificPrompt(userPromptText?: string): string {
+		const t = (userPromptText || '').toLowerCase();
+		if (/\b(minimal|agency|neutral|clean|linear|stripe|vercel|apple)\b/.test(t)) {
+			return DESIGNER_PROMPT;
+		}
+		return SYSTEM_PROMPT;
+	}
+
+	// One-shot repair helper
 	async repairComponent(
 		provider: LLMProviderType,
 		apiKey: string,
@@ -147,6 +161,54 @@ export class LLMClient {
 		return parsed;
 	}
 
+	// Second-pass repair with diff-guided minimal edits
+	async repairComponentWithDiff(
+		provider: LLMProviderType,
+		apiKey: string,
+		originalRequest: string,
+		brokenCode: string,
+		previousAttempt: string,
+		compilerError: string,
+		diffSummary: string,
+		options?: { model?: string; signal?: AbortSignal }
+	): Promise<LLMResponse> {
+		const model = options?.model || DEFAULT_MODELS[provider];
+		const messages: LLMMessage[] = [
+			{ role: 'system', content: SYSTEM_PROMPT },
+			{
+				role: 'user',
+				content: createRepairPromptDiff(
+					originalRequest,
+					brokenCode,
+					previousAttempt,
+					compilerError,
+					diffSummary
+				)
+			}
+		];
+		const t0 = performance.now();
+		const response = await this.makeRequest(
+			provider,
+			apiKey,
+			model,
+			messages,
+			false,
+			options?.signal
+		);
+		const data = await response.json();
+		const parsed = this.responseParser.parseResponse(provider, data);
+		const t1 = performance.now();
+		telemetryStore.add({
+			provider,
+			model,
+			ms: Math.round(t1 - t0),
+			ok: true,
+			purpose: 'repair',
+			usage: parsed.usage
+		});
+		return parsed;
+	}
+
 	private async makeRequest(
 		provider: LLMProviderType,
 		apiKey: string,
@@ -156,14 +218,7 @@ export class LLMClient {
 		signal?: AbortSignal,
 		options?: { temperature?: number; maxTokens?: number }
 	): Promise<Response> {
-		const body = {
-			provider,
-			apiKey,
-			model,
-			messages,
-			stream,
-			options
-		};
+		const body = { provider, apiKey, model, messages, stream, options };
 
 		const response = await fetch(API_ENDPOINT, {
 			method: 'POST',
@@ -187,11 +242,6 @@ export class LLMClient {
 		}
 
 		return response;
-	}
-
-	// TODO: Add model-specific system prompts or remove this altogether
-	private getModelSpecificPrompt(): string {
-		return SYSTEM_PROMPT;
 	}
 }
 

@@ -35,7 +35,7 @@ export const en = {
 		autoModel: 'Auto model',
 		emptyState: 'Start a conversation to generate Svelte components',
 		emptySubtext:
-			'Try: "Build a SaaS dashboard with sidebar navigation, KPI cards, a searchable & paginated table, and a settings drawer"',
+			'Try: "Create an AI creative web app: immersive hero, subject-based photo gallery (fetch images by topics like robots, circuits, neon), a video spotlight, a prompt box that adds images to the gallery, and a Join Beta form. Premium dark theme, glass morphism, smooth hover/focus states, all client‑only."',
 		conversationLabel: 'Chat conversation',
 		inputLabel: 'Component description input',
 		inputForm: 'Message input form',

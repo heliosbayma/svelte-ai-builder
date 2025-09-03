@@ -29,7 +29,7 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 
 			let generatedPreviewHtml = '';
 
-			if (result.error) {
+			if (result.error && !result.usedFallback) {
 				console.error('Compilation error details:', {
 					message: result.error.message,
 					filename: result.error.filename,
@@ -39,7 +39,7 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 					toString: result.error.toString()
 				});
 
-				// Attempt a single repair round using the LLM with compiler error context
+				// Attempt up to two repair rounds using the LLM with compiler error context
 				try {
 					const keys = get(apiKeyStore);
 					const apiKey = (keys as unknown as Record<string, string | null>)[provider] || null;
@@ -58,7 +58,42 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 
 					const repaired = await svelteCompiler.compile(repair.content);
 
-					if (repaired.error) return;
+					if (repaired.error) {
+						// Second repair pass with diff-guided instruction
+						try {
+							const previousAttempt = repair.content;
+							const diffSummary = 'Second pass';
+							const repair2 = await llmClient.repairComponentWithDiff(
+								provider as typeof provider,
+								apiKey,
+								prompt,
+								code,
+								previousAttempt,
+								result.error.toString?.() ?? result.error.message,
+								diffSummary
+							);
+							if (!repair2?.content) return;
+							const repaired2 = await svelteCompiler.compile(repair2.content);
+							if (repaired2.error) return;
+							// Apply second-pass fix
+							compilation.setCode(repair2.content);
+							compilation.setCompiled('', repaired2.js, repaired2.css || '');
+							const vid2 = historyStore.addVersion({
+								prompt: `${prompt} ${t('history.repairedSuffix')}`,
+								code: repair2.content,
+								provider
+							});
+							compiledCache.set(vid2, {
+								js: get(compilation.compiledJs),
+								css: get(compilation.compiledCss),
+								html: ''
+							});
+							return;
+						} catch (e2) {
+							console.warn('Second repair attempt failed:', e2);
+						}
+						return;
+					}
 
 					// Repair successful - apply the fix
 					compilation.setCode(repair.content);
@@ -89,6 +124,12 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 			} else {
 				compilation.setCompiled('', result.js, result.css || '');
 				// Use runtime preview route; send code via postMessage from PreviewPanel on load
+				generatedPreviewHtml = '';
+			}
+
+			// If we used a fallback successfully, prefer showing the working preview
+			if (result.usedFallback) {
+				compilation.setCompiled('', result.js, result.css || '');
 				generatedPreviewHtml = '';
 			}
 

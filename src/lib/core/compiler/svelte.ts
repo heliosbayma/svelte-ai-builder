@@ -122,7 +122,6 @@ export class SvelteCompiler {
 		return source;
 	}
 
-
 	async compile(source: string, options: CompilerOptions = {}): Promise<CompileResult> {
 		await this.init();
 
@@ -158,7 +157,8 @@ export class SvelteCompiler {
 				js: result.js.code,
 				css: result.css?.code,
 				warnings: result.warnings || [],
-				error: undefined
+				error: undefined,
+				usedFallback: false
 			};
 		} catch (error) {
 			// If compilation fails, try to create a smart template based on user intent
@@ -189,24 +189,29 @@ export class SvelteCompiler {
 					js: fallbackResult.js.code,
 					css: fallbackResult.css?.code,
 					warnings: fallbackResult.warnings || [],
-					error: error as unknown as Error // Still return the original error for debugging
+					error: undefined,
+					usedFallback: true,
+					originalErrorMessage: (error as any)?.message || String(error)
 				};
 			} catch (fallbackError) {
 				console.error('Even fallback failed:', fallbackError);
-				
+
 				// Critical error - even fallback template failed
-				toastError('Unable to compile any version of the component. Please try a different request.', {
-					title: 'Compilation Failed',
-					duration: 0, // Don't auto-dismiss
-					action: {
-						label: 'View Details',
-						handler: () => {
-							console.log('Original error:', error);
-							console.log('Fallback error:', fallbackError);
+				toastError(
+					'Unable to compile any version of the component. Please try a different request.',
+					{
+						title: 'Compilation Failed',
+						duration: 0, // Don't auto-dismiss
+						action: {
+							label: 'View Details',
+							handler: () => {
+								console.log('Original error:', error);
+								console.log('Fallback error:', fallbackError);
+							}
 						}
 					}
-				});
-				
+				);
+
 				return {
 					js: '',
 					css: undefined,

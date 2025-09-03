@@ -3,6 +3,10 @@ export interface CompileResult {
 	css?: string;
 	warnings: CompileWarning[];
 	error?: CompileError;
+	/** True when primary compile failed but a simplified fallback compiled successfully. */
+	usedFallback?: boolean;
+	/** Original error message when usedFallback is true. */
+	originalErrorMessage?: string;
 }
 
 export interface CompileWarning {
