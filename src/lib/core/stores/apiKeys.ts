@@ -58,7 +58,7 @@ function initMasterPassword() {
 	masterPassword = sessionPassword;
 }
 
-async function loadKeys(): Promise<ApiKeys> {
+async function loadKeys(silent: boolean = false): Promise<ApiKeys> {
 	if (!browser) return defaultKeys;
 
 	initMasterPassword();
@@ -106,9 +106,11 @@ async function loadKeys(): Promise<ApiKeys> {
 				decryptedKeys[provider as keyof ApiKeys] = await decryptData(encryptedKey, masterPassword);
 			} catch {
 				console.warn(`Failed to decrypt ${provider} key`);
-				toastWarning(`Failed to decrypt saved ${provider} API key. Please re-enter it.`, {
-					title: 'Decryption Failed'
-				});
+				if (!silent) {
+					toastWarning(`Failed to decrypt saved ${provider} API key. Please re-enter it.`, {
+						title: 'Decryption Failed'
+					});
+				}
 				decryptedKeys[provider as keyof ApiKeys] = null;
 			}
 		}
@@ -116,9 +118,11 @@ async function loadKeys(): Promise<ApiKeys> {
 		return decryptedKeys;
 	} catch (error) {
 		console.warn('Failed to load API keys:', error);
-		toastWarning('Unable to load saved API keys. Please re-configure them in Settings.', {
-			title: 'Storage Error'
-		});
+		if (!silent) {
+			toastWarning('Unable to load saved API keys. Please re-configure them in Settings.', {
+				title: 'Storage Error'
+			});
+		}
 		return defaultKeys;
 	}
 }
@@ -161,7 +165,7 @@ function createApiKeyStore() {
 	// Initialize store
 	const init = async () => {
 		if (initialized) return;
-		const keys = await loadKeys();
+		const keys = await loadKeys(true);
 		set(keys);
 		initialized = true;
 		apiKeysReady.set(true);
@@ -179,7 +183,7 @@ function createApiKeyStore() {
 			set(keys);
 		},
 		update: async (updater: (keys: ApiKeys) => ApiKeys) => {
-			const currentKeys = await loadKeys();
+			const currentKeys = await loadKeys(true);
 			const newKeys = updater(currentKeys);
 			await saveKeys(newKeys);
 			set(newKeys);
@@ -203,7 +207,7 @@ function createApiKeyStore() {
 		getStorageMode: (): StorageMode => mode,
 		setStorageMode: async (next: StorageMode) => {
 			if (!browser) return;
-			const current = await loadKeys();
+			const current = await loadKeys(true);
 			mode = next;
 			writeMode(next);
 			try {
