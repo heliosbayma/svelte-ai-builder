@@ -19,6 +19,7 @@
 		onSendOnEnterChange: (checked: boolean) => void;
 		onModelChange: (model: string) => void;
 		onProviderChange?: (provider: 'openai' | 'anthropic' | 'gemini' | '') => void;
+		showProviderChips?: boolean;
 	}
 
 	let {
@@ -34,7 +35,8 @@
 		onBuildFromPlan,
 		onSendOnEnterChange,
 		onModelChange,
-		onProviderChange
+		onProviderChange,
+		showProviderChips = false
 	}: Props = $props();
 
 	function autoGrow(e: Event) {
@@ -92,24 +94,29 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="border-t p-4 space-y-3" aria-label={t('chat.inputForm')}>
+<form
+	onsubmit={handleSubmit}
+	class="p-4 space-y-3 max-w-full overflow-hidden"
+	aria-label={t('chat.inputForm')}
+>
 	<fieldset>
 		<legend class="sr-only">Send message to generate Svelte component</legend>
+		<div class="mt-1 text-[11px] text-slate-500 flex items-center justify-end gap-2">
+			<span>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
+			<span>•</span>
+			<span>{charCount} chars</span>
+		</div>
 		<Textarea
 			bind:value={currentPrompt}
 			onkeydown={handleKeydown}
 			oninput={autoGrow}
 			placeholder={t('chat.placeholder')}
 			class="w-full min-h-[60px] max-h-[200px] resize-none"
+			style="max-width: 100%; overflow-x: hidden; word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;"
 			disabled={isGenerating}
 			aria-label={t('chat.inputLabel')}
 			data-chat-textarea
 		/>
-		<div class="mt-1 text-[11px] text-muted-foreground flex items-center justify-end gap-2">
-			<span>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
-			<span>•</span>
-			<span>{charCount} chars</span>
-		</div>
 	</fieldset>
 
 	<!-- Action rows -->
@@ -158,7 +165,7 @@
 
 		<!-- Model selector -->
 		<select
-			class="h-8 text-xs bg-transparent text-muted-foreground border-0 outline-none focus:outline-none focus:ring-0 hover:text-foreground cursor-pointer appearance-none"
+			class="h-8 text-xs bg-transparent text-slate-500 border-0 outline-none focus:outline-none focus:ring-0 hover:text-foreground cursor-pointer appearance-none"
 			value={modelInput}
 			onchange={handleModelChange}
 			disabled={isGenerating}
@@ -186,7 +193,7 @@
 		</select>
 
 		<!-- Right side options -->
-		<div class="flex items-center gap-3 text-xs text-muted-foreground">
+		<div class="flex items-center gap-3 text-xs text-slate-500">
 			<label
 				class="flex items-center gap-1.5 cursor-pointer hover:text-foreground transition-colors"
 			>
@@ -201,32 +208,37 @@
 			</label>
 		</div>
 
-		<!-- Provider chips (wrap on small widths) -->
-		<div class="flex items-center gap-1 flex-wrap basis-full mt-2" aria-label="Provider selection">
-			<button
-				class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'openai' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : ''}`}
-				disabled={isGenerating}
-				onclick={() => onProviderChange?.('openai')}
-				title={labelForProvider('openai')}
-				aria-pressed={lastProvider === 'openai'}
-				aria-label={labelForProvider('openai')}>{labelForProvider('openai')}</button
+		{#if showProviderChips}
+			<!-- Provider chips (wrap on small widths) -->
+			<div
+				class="flex items-center gap-1 flex-wrap basis-full mt-2"
+				aria-label="Provider selection"
 			>
-			<button
-				class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'anthropic' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : ''}`}
-				disabled={isGenerating}
-				onclick={() => onProviderChange?.('anthropic')}
-				title={labelForProvider('anthropic')}
-				aria-pressed={lastProvider === 'anthropic'}
-				aria-label={labelForProvider('anthropic')}>{labelForProvider('anthropic')}</button
-			>
-			<button
-				class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'gemini' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : ''}`}
-				disabled={isGenerating}
-				onclick={() => onProviderChange?.('gemini')}
-				title={labelForProvider('gemini')}
-				aria-pressed={lastProvider === 'gemini'}
-				aria-label={labelForProvider('gemini')}>{labelForProvider('gemini')}</button
-			>
-		</div>
+				<button
+					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'openai' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+					disabled={isGenerating}
+					onclick={() => onProviderChange?.('openai')}
+					title={labelForProvider('openai')}
+					aria-pressed={lastProvider === 'openai'}
+					aria-label={labelForProvider('openai')}>{labelForProvider('openai')}</button
+				>
+				<button
+					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'anthropic' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+					disabled={isGenerating}
+					onclick={() => onProviderChange?.('anthropic')}
+					title={labelForProvider('anthropic')}
+					aria-pressed={lastProvider === 'anthropic'}
+					aria-label={labelForProvider('anthropic')}>{labelForProvider('anthropic')}</button
+				>
+				<button
+					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'gemini' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+					disabled={isGenerating}
+					onclick={() => onProviderChange?.('gemini')}
+					title={labelForProvider('gemini')}
+					aria-pressed={lastProvider === 'gemini'}
+					aria-label={labelForProvider('gemini')}>{labelForProvider('gemini')}</button
+				>
+			</div>
+		{/if}
 	</div>
 </form>

@@ -186,67 +186,38 @@
 </script>
 
 <section class="h-full flex flex-col {className}">
-	<section
-		class="flex-1 preview-scrollbar"
-		aria-busy={!isMounted ? 'true' : 'false'}
-		aria-live="polite"
-	>
-		<iframe
-			bind:this={iframeRef}
-			class="w-full h-full bg-background"
-			title="Component Preview"
-			src="/preview"
-			sandbox="allow-scripts allow-same-origin"
-			onload={() => {
-				iframeReady = false;
-				isMounted = false;
-				lastCompiledJs = '';
-				hasFatalMountError = false;
-				if (mountAttemptId) clearTimeout(mountAttemptId);
-				mountAttemptId = null;
-				mountAttempts = 0;
-				try {
-					iframeRef?.contentWindow?.postMessage({ type: 'ping' }, targetOrigin || '*');
-					postTheme();
-				} catch {}
-			}}
-			onerror={() => {
-				toastError('Preview failed to load. Please refresh the page.', {
-					title: 'Preview Error',
-					duration: 0,
-					action: {
-						label: 'Refresh',
-						handler: () => location.reload()
-					}
-				});
-			}}
-		></iframe>
+	<section class="flex-1" aria-busy={!isMounted ? 'true' : 'false'} aria-live="polite">
+		<div class="w-full h-full rounded-lg border overflow-hidden">
+			<iframe
+				bind:this={iframeRef}
+				class="w-full h-full bg-background"
+				title="Component Preview"
+				src="/preview"
+				sandbox="allow-scripts allow-same-origin"
+				onload={() => {
+					iframeReady = false;
+					isMounted = false;
+					lastCompiledJs = '';
+					hasFatalMountError = false;
+					if (mountAttemptId) clearTimeout(mountAttemptId);
+					mountAttemptId = null;
+					mountAttempts = 0;
+					try {
+						iframeRef?.contentWindow?.postMessage({ type: 'ping' }, targetOrigin || '*');
+						postTheme();
+					} catch {}
+				}}
+				onerror={() => {
+					toastError('Preview failed to load. Please refresh the page.', {
+						title: 'Preview Error',
+						duration: 0,
+						action: {
+							label: 'Refresh',
+							handler: () => location.reload()
+						}
+					});
+				}}
+			></iframe>
+		</div>
 	</section>
 </section>
-
-<style>
-	.preview-scrollbar::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.preview-scrollbar::-webkit-scrollbar-track {
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: 4px;
-	}
-
-	.preview-scrollbar::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.15);
-		border-radius: 4px;
-		transition: background-color 0.2s;
-	}
-
-	.preview-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: rgba(255, 255, 255, 0.25);
-	}
-
-	/* Firefox scrollbar */
-	.preview-scrollbar {
-		scrollbar-width: thin;
-		scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
-	}
-</style>

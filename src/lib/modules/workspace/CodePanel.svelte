@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { Button } from '$lib/shared/ui/button';
 	import { Card } from '$lib/shared/ui/card';
 	import { GitCompare, Copy, X } from '@lucide/svelte';
@@ -21,8 +22,8 @@
 	const diffOps = $derived(diffLines($previousCode || '', $currentCode || ''));
 </script>
 
-<section class="h-full flex flex-col">
-	<header class="p-4 flex items-center justify-between border-b">
+<section class="h-full flex flex-col p-4">
+	<header class="pb-4 flex items-center justify-between">
 		<h2 class="font-semibold text-sm">Generated Code</h2>
 		<div class="flex items-center gap-1">
 			<Button
@@ -59,10 +60,10 @@
 			</Button>
 		</div>
 	</header>
-	<section class="flex-1 p-4 code-scrollbar overflow-auto">
+	<section class="flex-1 overflow-auto">
 		{#if $showDiff && $previousCode}
 			<div class="grid grid-cols-2 gap-4 h-full">
-				<Card class="h-full p-4 font-mono text-xs code-scrollbar overflow-auto">
+				<Card class="h-full p-4 font-mono text-xs  overflow-auto">
 					<h3 class="font-semibold mb-2">Previous</h3>
 					<div>
 						{#each diffOps as op, i (i)}
@@ -76,7 +77,7 @@
 						{/each}
 					</div>
 				</Card>
-				<Card class="h-full p-4 font-mono text-xs code-scrollbar overflow-auto">
+				<Card class="h-full p-4 font-mono text-xs  overflow-auto">
 					<h3 class="font-semibold mb-2">Current</h3>
 					<div>
 						{#each diffOps as op, i (i)}
@@ -94,33 +95,13 @@
 				</Card>
 			</div>
 		{:else}
-			<Card class="h-full p-4 font-mono text-sm code-scrollbar overflow-auto">
+			<Card class="h-full p-4 font-mono text-sm  overflow-auto">
 				{#if $currentCode}
 					<pre class="whitespace-pre-wrap text-xs">{$currentCode}</pre>
-				{:else}
+				{:else if browser}
 					<p class="text-muted-foreground">Generated Svelte code will appear here...</p>
 				{/if}
 			</Card>
 		{/if}
 	</section>
 </section>
-
-<style>
-	.code-scrollbar::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.code-scrollbar::-webkit-scrollbar-track {
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: 4px;
-	}
-
-	.code-scrollbar::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.15);
-		border-radius: 4px;
-	}
-
-	.code-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: rgba(255, 255, 255, 0.25);
-	}
-</style>

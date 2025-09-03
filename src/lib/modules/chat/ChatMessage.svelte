@@ -38,6 +38,45 @@
 		onRefine?.(message.id);
 	}
 
+	function handleCopyUserMessage() {
+		navigator.clipboard.writeText(message.content);
+	}
+
+	// Action button configuration - using derived to react to expanded state
+	const actionButtons = $derived([
+		{
+			icon: expanded ? EyeOffIcon : EyeIcon,
+			label: expanded ? t('actions.hide') : t('actions.show'),
+			onClick: toggleExpanded,
+			ariaLabel: expanded ? t('actions.hide') : t('actions.show'),
+			title: expanded ? t('actions.hide') : t('actions.show'),
+			ariaExpanded: expanded,
+			ariaControls: `code-${message.id}`
+		},
+		{
+			icon: CodeIcon,
+			label: 'Use Code',
+			onClick: handleUseCode,
+			ariaLabel: t('a11y.useCodeInEditor'),
+			title: t('actions.useCode'),
+			whitespaceNowrap: true
+		},
+		{
+			icon: CopyIcon,
+			label: 'Copy',
+			onClick: handleCopy,
+			ariaLabel: t('a11y.copyCode'),
+			title: t('actions.copy')
+		},
+		{
+			icon: Wand2Icon,
+			label: 'Refine',
+			onClick: handleRefine,
+			ariaLabel: t('a11y.refineComponent'),
+			title: t('actions.refine')
+		}
+	]);
+
 	$effect(() => {
 		// Load saved expansion state
 		const key = `msg_expanded_${message.id}`;
@@ -49,17 +88,7 @@
 		}
 	});
 
-	// Auto-expand generated code after idle if user hasn't interacted
-	$effect(() => {
-		if (message.generatedCode && !message.streaming && !message.error && !expanded) {
-			const id = setTimeout(() => {
-				expanded = true;
-				const key = `msg_expanded_${message.id}`;
-				safeSessionStorage.set(key, '1');
-			}, 2000);
-			return () => clearTimeout(id);
-		}
-	});
+	// Code is hidden by default - no auto-expansion
 
 	function toggleExpanded() {
 		expanded = !expanded;
@@ -69,22 +98,63 @@
 			console.warn('Failed to save message expansion state:', result.error);
 		}
 	}
+
+	// Simple syntax highlighting for Svelte/JS code
+	function highlightCode(code: string): string {
+		return (
+			code
+				// HTML/Svelte tags
+				.replace(
+					/(&lt;\/?)([a-zA-Z][a-zA-Z0-9-]*)(.*?)(&gt;)/g,
+					'$1<span class="text-blue-400">$2</span>$3$4'
+				)
+				// Attributes
+				.replace(/(\s)([a-zA-Z-]+)(=)/g, '$1<span class="text-green-400">$2</span>$3')
+				// Strings
+				.replace(/("[^"]*")/g, '<span class="text-yellow-300">$1</span>')
+				.replace(/('[^']*')/g, '<span class="text-yellow-300">$1</span>')
+				// Comments
+				.replace(/(\/\*.*?\*\/)/gs, '<span class="text-gray-500 italic">$1</span>')
+				.replace(/(\/\/.*$)/gm, '<span class="text-gray-500 italic">$1</span>')
+				// Keywords
+				.replace(
+					/\b(function|const|let|var|if|else|for|while|return|import|export|interface|type|class)\b/g,
+					'<span class="text-purple-400">$1</span>'
+				)
+				// Svelte directives
+				.replace(
+					/(\$:|#if|#each|#await|\/if|\/each|\/await|\$props|\$state|\$effect)/g,
+					'<span class="text-pink-400">$1</span>'
+				)
+		);
+	}
 </script>
 
 <article
 	class="{message.role === 'user' ? 'mb-3' : 'mb-8'} flex {message.role === 'user'
 		? 'justify-end'
-		: 'justify-start'} w-full {message.role === 'user' ? 'order-2' : 'order-1'}"
+		: 'justify-start'} w-full {message.role === 'user' ? 'order-2' : 'order-1'} @container"
 	aria-label={message.role === 'user' ? t('chat.userMessage') : t('chat.assistantMessage')}
 	role="group"
 >
 	{#if message.role === 'user'}
 		<!-- User message: Keep the card/bubble style -->
 		<div class="flex justify-end">
-			<div
-				class="max-w-[80%] p-3 rounded-lg bg-slate-600 dark:bg-slate-700 text-slate-100 shadow-sm"
-			>
-				<div class="whitespace-pre-wrap text-sm">{message.content}</div>
+			<div class="max-w-[80%] group relative">
+				<div
+					class="p-3 rounded-lg bg-slate-700 dark:bg-slate-800 text-slate-400 shadow-sm break-words overflow-hidden"
+				>
+					<div class="whitespace-pre-wrap text-sm break-words">{message.content}</div>
+				</div>
+				<!-- Copy button for user message -->
+				<button
+					class="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 bg-slate-700 dark:bg-slate-800 rounded-full hover:bg-slate-600 dark:hover:bg-slate-700"
+					onclick={handleCopyUserMessage}
+					title="Copy message"
+					aria-label="Copy user message"
+				>
+					<CopyIcon class="w-3 h-3 text-slate-200" />
+				</button>
 			</div>
 		</div>
 	{:else}
@@ -110,19 +180,11 @@
 				</section>
 			{:else if message.generatedCode && !message.streaming}
 				<!-- Code generation result -->
-				<section class="space-y-3" aria-labelledby={`code-header-${message.id}`}>
+				<section class="space-y-1" aria-labelledby={`code-header-${message.id}`}>
 					<header
-						class="flex items-center justify-between gap-2 text-sm text-muted-foreground"
+						class="flex items-center justify-end gap-2 text-sm text-muted-foreground"
 						id={`code-header-${message.id}`}
 					>
-						<div class="flex items-center gap-2 min-w-0 flex-1">
-							<div
-								class="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0"
-								aria-label="AI Assistant"
-							>
-								<span class="text-xs font-medium" aria-hidden="true">AI</span>
-							</div>
-						</div>
 						<div class="flex items-center gap-2 flex-shrink-0 text-xs">
 							<time datetime={new Date(message.timestamp).toISOString()}
 								>{formatTime(message.timestamp)}</time
@@ -140,21 +202,28 @@
 					</header>
 
 					{#if expanded}
-						<pre
-							id={`code-${message.id}`}
-							class="font-mono text-xs whitespace-pre-wrap break-words max-h-96 overflow-auto rounded-lg bg-muted/30 border p-4"
-							aria-label="Generated Svelte component code"
-							role="code">{message.generatedCode}</pre>
-					{:else}
 						<div
-							class="p-4 rounded-lg bg-muted/20 border border-dashed"
-							role="region"
-							aria-label="Code preview"
+							id={`code-${message.id}`}
+							class="font-mono text-xs whitespace-pre-wrap break-words max-h-96 overflow-auto rounded-lg bg-gray-900 border p-4 relative"
+							aria-label="Generated Svelte component code"
+							role="code"
 						>
-							<p class="text-sm text-muted-foreground">
-								{getCodePreview(message.generatedCode)} - Click "{t('actions.show')}" below to
-								expand.
-							</p>
+							<!-- Code with syntax highlighting -->
+							<div class="text-gray-100">
+								{@html highlightCode(
+									message.generatedCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+								)}
+							</div>
+						</div>
+					{:else}
+						<div class="p-3 rounded-lg bg-muted/30 border border-muted/50">
+							<div class="flex items-center gap-2 text-sm text-muted-foreground">
+								<CodeIcon class="w-4 h-4" />
+								<span class="font-medium">Code Generated</span>
+								<span class="text-xs opacity-60"
+									>({message.generatedCode.split('\n').length} lines)</span
+								>
+							</div>
 						</div>
 					{/if}
 				</section>
@@ -162,17 +231,9 @@
 				<!-- Regular AI text response -->
 				<section class="space-y-2" aria-labelledby={`text-header-${message.id}`}>
 					<header
-						class="flex items-center justify-between gap-2 text-sm text-muted-foreground mb-2"
+						class="flex items-center justify-end gap-2 text-sm text-muted-foreground mb-2"
 						id={`text-header-${message.id}`}
 					>
-						<div class="flex items-center gap-2">
-							<div
-								class="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0"
-								aria-label="AI Assistant"
-							>
-								<span class="text-xs font-medium" aria-hidden="true">AI</span>
-							</div>
-						</div>
 						<div class="flex items-center gap-2 flex-shrink-0 text-xs">
 							<time datetime={new Date(message.timestamp).toISOString()}
 								>{formatTime(message.timestamp)}</time
@@ -216,59 +277,42 @@
 					{/if}
 				</section>
 			{/if}
-		</div>
-	{/if}
-
-	<!-- Simplified action buttons for assistant code -->
-	{#if message.role === 'assistant' && message.generatedCode && !message.streaming && !message.error}
-		<div
-			class="mt-1 flex items-center justify-between text-xs text-muted-foreground"
-			aria-label={t('chat.messageActions')}
-		>
-			<button
-				class="flex items-center gap-2 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
-				onclick={toggleExpanded}
-				aria-expanded={expanded}
-				aria-controls={`code-${message.id}`}
-				title={expanded ? t('actions.hide') : t('actions.show')}
-				aria-label={expanded ? t('actions.hide') : t('actions.show')}
-			>
-				{#if expanded}
-					<EyeOffIcon class="w-4 h-4" />
-				{:else}
-					<EyeIcon class="w-4 h-4" />
-				{/if}
-				<span>{expanded ? t('actions.hide') : t('actions.show')}</span>
-			</button>
-
-			<div class="flex items-center gap-1">
-				<button
-					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
-					onclick={handleUseCode}
-					aria-label={t('a11y.useCodeInEditor')}
-					title={t('actions.useCode')}
+			<!-- Simplified action buttons for assistant code -->
+			{#if message.generatedCode && !message.streaming && !message.error}
+				<div
+					class="mt-0 flex items-center gap-3 [@container(min-width:280px)]:gap-0 text-xs text-muted-foreground"
+					aria-label={t('chat.messageActions')}
 				>
-					<CodeIcon class="w-4 h-4" />
-				</button>
-
-				<button
-					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
-					onclick={handleCopy}
-					aria-label={t('a11y.copyCode')}
-					title={t('actions.copy')}
-				>
-					<CopyIcon class="w-4 h-4" />
-				</button>
-
-				<button
-					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
-					onclick={handleRefine}
-					aria-label={t('a11y.refineComponent')}
-					title={t('actions.refine')}
-				>
-					<Wand2Icon class="w-4 h-4" />
-				</button>
-			</div>
+					{#each actionButtons as button}
+						{@const IconComponent = button.icon}
+						<button
+							class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-1 [@container(min-width:280px)]:px-2 py-1 rounded hover:bg-accent/50"
+							onclick={button.onClick}
+							aria-label={button.ariaLabel}
+							title={button.title}
+							aria-expanded={button.ariaExpanded}
+							aria-controls={button.ariaControls}
+						>
+							<IconComponent
+								class="w-{button.icon === EyeIcon || button.icon === EyeOffIcon
+									? '4'
+									: '3.5'} h-{button.icon === EyeIcon || button.icon === EyeOffIcon
+									? '4'
+									: '3.5'} min-w-{button.icon === EyeIcon || button.icon === EyeOffIcon
+									? '4'
+									: '3.5'}"
+							/>
+							<span
+								class="hidden [@container(min-width:280px)]:inline {button.whitespaceNowrap
+									? 'whitespace-nowrap'
+									: ''}"
+							>
+								{button.label}
+							</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 </article>

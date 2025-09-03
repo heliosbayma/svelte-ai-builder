@@ -199,7 +199,11 @@
 		<ChevronDown class="size-3 opacity-60" />
 	</Button>
 	{#if isOpen}
-		<button class="fixed inset-0 z-40" aria-label="Close session menu" onclick={onClose}></button>
+		<button
+			class="fixed inset-0 z-40 cursor-pointer"
+			aria-label="Close session menu"
+			onclick={onClose}
+		></button>
 		<nav
 			bind:this={menuRef}
 			class="absolute right-0 z-50 mt-2 w-48 bg-popover border rounded-lg shadow-lg p-1"

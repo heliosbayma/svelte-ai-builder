@@ -63,9 +63,9 @@
 	}
 </script>
 
-<header class="border-b bg-card px-6 py-4 flex items-center justify-between">
+<header class="px-6 py-4 flex items-center justify-between">
 	<section class="flex items-center gap-4">
-		<h1 class="text-2xl font-bold">{t('header.title')}</h1>
+		<h1 class="text-xl font-bold">{t('header.title')}</h1>
 	</section>
 	<nav class="flex items-center gap-3">
 		<div class="flex items-center gap-1">

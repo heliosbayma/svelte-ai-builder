@@ -152,7 +152,7 @@
 			<Splitpanes horizontal={false} on:resize={handleCodePanesResize}>
 				<Pane minSize={30} size={$showCode ? $savedPreviewSize : 100} class="bg-background">
 					<div class="h-full flex flex-col">
-						<div class="flex-1 p-4">
+						<div class="flex-1 p-4 pt-0">
 							<PreviewPanel
 								class="h-full"
 								previewHtml={$previewHtml}
@@ -164,8 +164,16 @@
 					</div>
 				</Pane>
 				{#if $showCode}
-					<Pane minSize={LAYOUT.PANE_MIN_SIZE} size={$savedCodeSize} class="bg-background">
-						<CodePanel {layout} {compilation} onCopy={copyCode} />
+					<Pane
+						minSize={LAYOUT.PANE_MIN_SIZE}
+						size={$savedCodeSize}
+						class="bg-background rounded-lg border overflow-hidden mr-4"
+					>
+						<div class="h-full flex flex-col">
+							<div class="flex-1 pt-0">
+								<CodePanel {layout} {compilation} onCopy={copyCode} />
+							</div>
+						</div>
 					</Pane>
 				{/if}
 			</Splitpanes>

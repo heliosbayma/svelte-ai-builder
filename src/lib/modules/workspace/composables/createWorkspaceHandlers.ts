@@ -196,21 +196,26 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 			compilation.setCode(current.code);
 			const cached = compiledCache.get(current.id);
 			if (cached) {
-				compilation.setCompiled(cached.html || '', cached.js, cached.css || '');
-				compilation.clearLoading();
+				// Force preview update by clearing first then setting
+				compilation.clearCompiled();
+				// Use requestAnimationFrame to ensure the clear takes effect
+				requestAnimationFrame(() => {
+					compilation.setCompiled(cached.html || '', cached.js, cached.css || '');
+					compilation.clearLoading();
+				});
 			} else {
 				// Lazy recompile
 				svelteCompiler.compile(current.code).then((res) => {
 					if (res.error) {
 						const errorHtml = renderGenericErrorHtml(res.error.message);
 						compilation.setError(errorHtml);
-						compiledCache.set(current.id, { js: '', css: '', html: get(compilation.previewHtml) });
+						compiledCache.set(current.id, { js: '', css: '', html: errorHtml });
 						compilation.clearLoading();
 					} else {
 						compilation.setCompiled('', res.js, res.css || '');
 						compiledCache.set(current.id, {
-							js: get(compilation.compiledJs),
-							css: get(compilation.compiledCss),
+							js: res.js,
+							css: res.css || '',
 							html: ''
 						});
 						compilation.clearLoading();
@@ -228,10 +233,6 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 		historyStore.goToVersion(index);
 		compilation.setLoading(t('loading.teleporting'));
 		loadCurrentVersion();
-		// Ensure code panel is visible after restoring a version
-		if (!get(layout.showCode)) {
-			layout.toggleCode();
-		}
 	}
 
 	function handleCodePanesResize(e: CustomEvent): void {

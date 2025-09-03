@@ -31,16 +31,17 @@
 .default-theme .splitpanes--vertical > .splitpanes__splitter {
 	width: 1px !important;
 	border: none !important;
-	background: var(--border) !important;
+	background: transparent !important;
 	cursor: col-resize;
 	transition: all 0.2s ease;
+	margin: 0;
 }
 
 .default-theme.splitpanes--horizontal > .splitpanes__splitter,
 .default-theme .splitpanes--horizontal > .splitpanes__splitter {
 	height: 1px !important;
 	border: none !important;
-	background: var(--border) !important;
+	background: transparent !important;
 	cursor: row-resize;
 	transition: all 0.2s ease;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import type { ChatMessage } from '$lib/core/stores/chat';
 	import { t } from '$lib/shared/i18n';
 	import ChatMessageComponent from './ChatMessage.svelte';
@@ -86,7 +87,7 @@
 <section
 	bind:this={chatContainer}
 	onscroll={handleScroll}
-	class="relative flex-1 overflow-y-auto p-4 scroll-smooth chat-scrollbar"
+	class="relative flex-1 overflow-y-auto p-4 scroll-smooth"
 	role="log"
 	aria-live="polite"
 	aria-busy={isGenerating ? 'true' : 'false'}
@@ -95,13 +96,21 @@
 	{#if !isGenerating && !isAtBottom && messages.length > 0}
 		<button
 			onclick={jumpToLatest}
-			class="absolute left-1/2 -translate-x-1/2 bottom-4 z-10 rounded-full bg-primary text-primary-foreground text-xs px-3 py-1 shadow"
+			class="absolute left-1/2 -translate-x-1/2 bottom-2 z-10 rounded-full bg-primary text-primary-foreground text-xs px-3 py-2 shadow-lg hover:bg-primary/90 transition-all duration-200 cursor-pointer flex items-center gap-1"
 			aria-label={t('actions.jumpToLatest')}
 		>
+			<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M19 14l-7 7m0 0l-7-7m7 7V3"
+				/>
+			</svg>
 			{t('actions.jumpToLatest')}
 		</button>
 	{/if}
-	{#if messages.length === 0}
+	{#if browser && messages.length === 0}
 		<section
 			class="text-center text-muted-foreground mt-8"
 			role="status"
@@ -123,30 +132,3 @@
 		<div style={`height:${bottomSpacerHeight()}px`} aria-hidden="true"></div>
 	{/if}
 </section>
-
-<style>
-	.chat-scrollbar::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.chat-scrollbar::-webkit-scrollbar-track {
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: 4px;
-	}
-
-	.chat-scrollbar::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.15);
-		border-radius: 4px;
-		transition: background-color 0.2s;
-	}
-
-	.chat-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: rgba(255, 255, 255, 0.25);
-	}
-
-	/* Firefox scrollbar */
-	.chat-scrollbar {
-		scrollbar-width: thin;
-		scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
-	}
-</style>

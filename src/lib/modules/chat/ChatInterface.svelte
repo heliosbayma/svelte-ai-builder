@@ -6,7 +6,7 @@
 	import type { LLMProviderType } from '$lib/core/ai/services/llm';
 	import ChatInput from './ChatInput.svelte';
 	import ChatScrollArea from './ChatScrollArea.svelte';
-	import { apiKeyStore } from '$lib/core/stores/apiKeys';
+	import { apiKeyStore, apiKeysReady } from '$lib/core/stores/apiKeys';
 	import { modalStore } from '$lib/core/stores/modals';
 	import { t } from '$lib/shared/i18n';
 
@@ -196,13 +196,13 @@
 	role="application"
 	aria-label="Chat interface for Svelte component generation"
 >
-	{#if !hasAnyApiKey()}
+	{#if $apiKeysReady && !hasAnyApiKey()}
 		<div
 			class="px-4 py-2 text-xs bg-amber-500/10 text-amber-700 border border-amber-500/20 flex items-center justify-between"
 		>
 			<div>
 				<strong>{t('errors.noApiKeysConfigured')}.</strong>
-				{t('loading.welcomeLong')}
+				{t('validation.apiKeyMinRequired')}
 			</div>
 			<button class="underline" onclick={openApiKeys} aria-label={t('session.apiKeys')}
 				>{t('session.apiKeys')}</button

@@ -9,6 +9,8 @@ export interface ApiKeys {
 	gemini: string | null;
 }
 
+export const apiKeysReady = writable(false);
+
 interface EncryptedApiKeys {
 	openai: string | null;
 	anthropic: string | null;
@@ -26,7 +28,6 @@ type StorageMode = 'local' | 'session';
 const MODE_KEY = 'ai-builder-api-keys:mode';
 const STORAGE_KEY = 'ai-builder-api-keys-encrypted';
 
-// Auto-generated session master password
 let masterPassword: string | null = null;
 
 function readMode(): StorageMode {
@@ -47,11 +48,9 @@ function getStorage(mode: StorageMode) {
 function initMasterPassword() {
 	if (!browser || masterPassword) return;
 
-	// Try to get existing session password
 	let sessionPassword = sessionStorage.getItem('ai-builder-master-password');
 
 	if (!sessionPassword) {
-		// Generate new session password
 		sessionPassword = crypto.randomUUID() + crypto.randomUUID();
 		sessionStorage.setItem('ai-builder-master-password', sessionPassword);
 	}
@@ -165,6 +164,7 @@ function createApiKeyStore() {
 		const keys = await loadKeys();
 		set(keys);
 		initialized = true;
+		apiKeysReady.set(true);
 	};
 
 	// Auto-initialize on first access
@@ -198,6 +198,7 @@ function createApiKeyStore() {
 			}
 			masterPassword = null;
 			set(defaultKeys);
+			apiKeysReady.set(true);
 		},
 		getStorageMode: (): StorageMode => mode,
 		setStorageMode: async (next: StorageMode) => {

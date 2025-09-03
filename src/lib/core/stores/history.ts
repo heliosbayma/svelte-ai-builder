@@ -216,6 +216,26 @@ function createHistoryStore() {
 				}
 				return state;
 			});
+		},
+
+		// Update label for specific version by index
+		updateVersionLabel: (index: number, label: string | undefined) => {
+			update((state) => {
+				if (index >= 0 && index < state.versions.length && state.versions[index]) {
+					const updatedVersions = [...state.versions];
+					updatedVersions[index] = {
+						...updatedVersions[index],
+						label
+					};
+					const next: HistoryState = {
+						...state,
+						versions: updatedVersions
+					};
+					persist.save(next);
+					return next;
+				}
+				return state;
+			});
 		}
 	};
 }

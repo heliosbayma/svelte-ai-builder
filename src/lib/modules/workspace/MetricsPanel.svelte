@@ -14,7 +14,7 @@
 	<div class="bg-card border rounded-md shadow-md w-[360px] overflow-hidden">
 		<header class="px-3 py-2 flex items-center justify-between border-b">
 			<h3 class="text-sm font-semibold">Metrics</h3>
-			<button class="text-xs px-2 py-1 border rounded" onclick={() => (open = !open)}
+			<button class="text-xs px-2 py-1 border rounded cursor-pointer" onclick={() => (open = !open)}
 				>{open ? 'Hide' : 'Show'}</button
 			>
 		</header>
