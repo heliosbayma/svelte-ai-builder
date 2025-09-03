@@ -25,6 +25,9 @@
 	let lastCompiledJs = '';
 	let hasFatalMountError = $state(false);
 	let targetOrigin: string | null = null;
+	const sandboxAttrs = (import.meta as any).env?.DEV
+		? 'allow-scripts allow-same-origin'
+		: 'allow-scripts';
 
 	function postTheme() {
 		const isDark = document.documentElement.classList.contains('dark');
@@ -193,7 +196,7 @@
 				class="w-full h-full bg-background"
 				title="Component Preview"
 				src="/preview"
-				sandbox="allow-scripts allow-same-origin"
+				sandbox={sandboxAttrs}
 				onload={() => {
 					iframeReady = false;
 					isMounted = false;
