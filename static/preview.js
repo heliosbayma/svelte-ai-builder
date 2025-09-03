@@ -7,20 +7,7 @@
 
 let svelteClient = null;
 let svelteMount = null;
-
-try {
-	// Try Vite dev server paths first
-	svelteClient = await import('/@fs/node_modules/svelte/src/internal/client/index.js').catch(() => null);
-	if (!svelteClient) {
-		svelteClient = await import('/node_modules/svelte/src/internal/client/index.js').catch(() => null);
-	}
-	svelteMount = await import('/@fs/node_modules/svelte/src/index.js').then((m) => m.mount).catch(() => null);
-	if (!svelteMount) {
-		svelteMount = await import('/node_modules/svelte/src/index.js').then((m) => m.mount).catch(() => null);
-	}
-} catch (e) {
-	console.warn('[preview] Failed to load Svelte runtime:', e);
-}
+// Runtime is loaded lazily during mount (dev only). In production, static preview doesn't mount compiled code.
 
 let appEl = null;
 
@@ -28,6 +15,17 @@ async function mountCompiled(js, css) {
 	if (!appEl) {
 		console.error('[preview] appEl not available for mounting');
 		return;
+	}
+
+	// Lazy-load Svelte runtime only when needed (dev only)
+	if (!svelteClient && !svelteMount) {
+		try {
+			// Available in dev via Vite's /@fs path
+			svelteClient = await import('/@fs/node_modules/svelte/src/internal/client/index.js').catch(() => null);
+			svelteMount = await import('/@fs/node_modules/svelte/src/index.js').then((m) => m.mount).catch(() => null);
+		} catch (e) {
+			console.warn('[preview] Svelte runtime not available (expected in production):', e);
+		}
 	}
 
 	// Clear previous content and ensure fresh DOM state
