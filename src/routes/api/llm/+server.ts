@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { getErrorMessage } from '$lib/shared/utils/storage';
 import type { RequestHandler } from './$types';
 
 interface LLMMessage {
@@ -132,9 +133,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json(data);
 	} catch (error) {
 		console.error('LLM API Error:', error);
-		return json(
-			{ error: error instanceof Error ? error.message : 'Internal server error' },
-			{ status: 500 }
-		);
+		return json({ error: getErrorMessage(error) }, { status: 500 });
 	}
 };
