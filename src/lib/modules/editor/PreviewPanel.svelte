@@ -25,9 +25,7 @@
 	let lastCompiledJs = '';
 	let hasFatalMountError = $state(false);
 	let targetOrigin: string | null = null;
-	const sandboxAttrs = (import.meta as any).env?.DEV
-		? 'allow-scripts allow-same-origin'
-		: 'allow-scripts';
+	const sandboxAttrs = 'allow-scripts allow-same-origin';
 
 	function postTheme() {
 		const isDark = document.documentElement.classList.contains('dark');
