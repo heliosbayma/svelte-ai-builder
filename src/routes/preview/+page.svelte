@@ -39,10 +39,7 @@
 				.replace(/^import\s+.*?from\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '')
 				.replace(/^import\s+(['"])svelte\/internal\/.*?\1;?\s*$/gm, '');
 
-		// Debug: inspect transformed module (removed empty try-catch)
-
 		try {
-			// Import as a module so top-level ESM syntax is allowed
 			const blob = new Blob([transformed], { type: 'text/javascript' });
 			const url = URL.createObjectURL(blob);
 			const mod: any = await import(/* @vite-ignore */ url);
@@ -53,12 +50,10 @@
 			if (typeof Component === 'function') {
 				const defaultProps = {};
 
-				// Ensure clean slate before each mount attempt
 				const ensureCleanTarget = () => {
 					if (appEl) appEl.innerHTML = '';
 				};
 
-				// Mount strategies in order of preference
 				const mountStrategies = [
 					{
 						name: 'Svelte 5 runtime mount API',
@@ -91,49 +86,17 @@
 
 				if (!mounted) {
 					console.error('All mount strategies failed');
+					try {
+						window.parent?.postMessage(
+							{ type: 'mount-error', error: 'All strategies failed' },
+							'*'
+						);
+					} catch {}
+				} else {
+					try {
+						window.parent?.postMessage({ type: 'mounted' }, '*');
+					} catch {}
 				}
-			}
-
-			// Apply image error fallbacks (for broken external URLs)
-			try {
-				const applyImgFallbacks = (root: HTMLElement | Document) => {
-					const imgs = root.querySelectorAll('img');
-					imgs.forEach((img) => {
-						if ((img as HTMLElement).dataset && (img as HTMLElement).dataset.fallbackApplied)
-							return;
-						img.addEventListener('error', () => {
-							const el = img as HTMLImageElement & { dataset: DOMStringMap };
-							if (el.dataset.fallbackApplied) return;
-							el.dataset.fallbackApplied = '1';
-							const seed = el.alt && el.alt.trim().length > 0 ? el.alt.trim() : 'image';
-							el.src = `https://picsum.photos/seed/${encodeURIComponent(seed)}/640/360`;
-						});
-					});
-				};
-				applyImgFallbacks(appEl);
-				const mo = new MutationObserver((mutations) => {
-					for (const m of mutations) {
-						m.addedNodes.forEach((node) => {
-							if (node instanceof HTMLElement) {
-								if (node.tagName === 'IMG') applyImgFallbacks(node);
-								applyImgFallbacks(node);
-							}
-						});
-					}
-				});
-				mo.observe(appEl, { childList: true, subtree: true });
-			} catch {}
-
-			if (!mounted) {
-				appEl.innerHTML =
-					'<div style="padding:12px;color:var(--destructive);background:color-mix(in oklab, var(--destructive) 15%, var(--background));border:1px solid color-mix(in oklab, var(--destructive) 25%, var(--background));border-radius:6px;">Failed to mount component: no default export/function found.</div>';
-				try {
-					window.parent?.postMessage({ type: 'mount-error', error: 'failed to mount' }, '*');
-				} catch {}
-			} else {
-				try {
-					window.parent?.postMessage({ type: 'mounted' }, '*');
-				} catch {}
 			}
 		} catch (err) {
 			const error = err as Error;
@@ -142,6 +105,9 @@
         ${error.message}
       </div>`;
 			console.error('Preview runtime error:', error);
+			try {
+				window.parent?.postMessage({ type: 'mount-error', error: error.message }, '*');
+			} catch {}
 		}
 	}
 
@@ -149,7 +115,13 @@
 		try {
 			if (event.origin && event.origin !== window.origin && event.origin !== 'null') return;
 		} catch {}
-		const data = event.data as { type?: string; js?: string; css?: string; message?: string };
+		const data = event.data as {
+			type?: string;
+			js?: string;
+			css?: string;
+			message?: string;
+			dark?: boolean;
+		};
 		if (!data || !data.type) return;
 		if (data.type === 'ping') {
 			try {
@@ -160,6 +132,12 @@
 		if (data.type === 'mount') {
 			if (typeof data.js !== 'string') return;
 			mountCompiled(data.js, data.css);
+			return;
+		}
+		if (data.type === 'apply-theme') {
+			try {
+				document.documentElement.classList.toggle('dark', !!data.dark);
+			} catch {}
 			return;
 		}
 		if (data.type === 'loading') {
@@ -194,12 +172,18 @@
 
 	// Register message handler on client only
 	onMount(() => {
+		// Initialize theme from localStorage / media query on first paint
+		try {
+			const saved = localStorage.getItem('theme');
+			const prefersDark =
+				window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+			document.documentElement.classList.toggle('dark', saved ? saved === 'dark' : prefersDark);
+		} catch {}
+
 		window.addEventListener('message', handleMessage);
-		// Notify parent that preview is ready to receive code
 		try {
 			window.parent?.postMessage({ type: 'preview-ready' }, '*');
 		} catch {}
-		// Show a default loading prompt until code arrives
 		try {
 			if (appEl) {
 				appEl.innerHTML = `
@@ -221,56 +205,41 @@
 	class="preview-content"
 ></div>
 
-<!-- Intentionally use hardcoded inline styles for loading/welcome/default renders to ensure -->
-<!-- the preview remains legible and independent from the parent app's CSS. This sandbox may -->
-<!-- render arbitrary user code that could break external styles; inline styles guarantee a -->
-<!-- consistent fallback layout. -->
 <style>
 	.preview-content::-webkit-scrollbar {
 		width: 8px;
 	}
-
 	.preview-content::-webkit-scrollbar-track {
 		background: rgba(255, 255, 255, 0.05);
 		border-radius: 4px;
 	}
-
 	.preview-content::-webkit-scrollbar-thumb {
 		background: rgba(255, 255, 255, 0.15);
 		border-radius: 4px;
 		transition: background-color 0.2s;
 	}
-
 	.preview-content::-webkit-scrollbar-thumb:hover {
 		background: rgba(255, 255, 255, 0.25);
 	}
-
-	/* Firefox scrollbar */
 	.preview-content {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
 	}
-
-	/* Apply to any scrollable content inside */
 	:global(*::-webkit-scrollbar) {
 		width: 8px;
 	}
-
 	:global(*::-webkit-scrollbar-track) {
 		background: rgba(255, 255, 255, 0.05);
 		border-radius: 4px;
 	}
-
 	:global(*::-webkit-scrollbar-thumb) {
 		background: rgba(255, 255, 255, 0.15);
 		border-radius: 4px;
 		transition: background-color 0.2s;
 	}
-
 	:global(*::-webkit-scrollbar-thumb:hover) {
 		background: rgba(255, 255, 255, 0.25);
 	}
-
 	:global(*) {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);

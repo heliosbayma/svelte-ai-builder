@@ -6,6 +6,9 @@
 	import type { LLMProviderType } from '$lib/core/ai/services/llm';
 	import ChatInput from './ChatInput.svelte';
 	import ChatScrollArea from './ChatScrollArea.svelte';
+	import { apiKeyStore } from '$lib/core/stores/apiKeys';
+	import { modalStore } from '$lib/core/stores/modals';
+	import { t } from '$lib/shared/i18n';
 
 	interface Props {
 		onCodeGenerated?: (code: string, prompt: string, provider: LLMProviderType) => void;
@@ -25,19 +28,41 @@
 		});
 
 		return {
-			get currentPrompt() { return state.currentPrompt; },
-			get pendingPlan() { return state.pendingPlan; },
-			get modelInput() { return state.modelInput; },
-			get lastProvider() { return state.lastProvider; },
-			get sendOnEnter() { return state.sendOnEnter; },
+			get currentPrompt() {
+				return state.currentPrompt;
+			},
+			get pendingPlan() {
+				return state.pendingPlan;
+			},
+			get modelInput() {
+				return state.modelInput;
+			},
+			get lastProvider() {
+				return state.lastProvider;
+			},
+			get sendOnEnter() {
+				return state.sendOnEnter;
+			},
 
-			setPrompt: (prompt: string) => { state.currentPrompt = prompt; },
-			setPendingPlan: (plan: string) => { state.pendingPlan = plan; },
-			setModelInput: (input: string) => { state.modelInput = input; },
-			setLastProvider: (provider: typeof state.lastProvider) => { state.lastProvider = provider; },
-			toggleSendOnEnter: () => { state.sendOnEnter = !state.sendOnEnter; },
-			
-			clearPrompt: () => { state.currentPrompt = ''; },
+			setPrompt: (prompt: string) => {
+				state.currentPrompt = prompt;
+			},
+			setPendingPlan: (plan: string) => {
+				state.pendingPlan = plan;
+			},
+			setModelInput: (input: string) => {
+				state.modelInput = input;
+			},
+			setLastProvider: (provider: typeof state.lastProvider) => {
+				state.lastProvider = provider;
+			},
+			toggleSendOnEnter: () => {
+				state.sendOnEnter = !state.sendOnEnter;
+			},
+
+			clearPrompt: () => {
+				state.currentPrompt = '';
+			},
 			clearAll: () => {
 				state.currentPrompt = '';
 				state.pendingPlan = '';
@@ -56,7 +81,8 @@
 		sendOnEnter?: boolean;
 	}>({
 		key: 'ui-chat',
-		version: 1
+		version: 1,
+		debounceMs: 200
 	});
 
 	// One-time restore on mount
@@ -101,7 +127,11 @@
 	}
 
 	async function onBuildFromPlan() {
-		const provider = await handleBuildFromPlan(input.pendingPlan, input.modelInput, input.lastProvider);
+		const provider = await handleBuildFromPlan(
+			input.pendingPlan,
+			input.modelInput,
+			input.lastProvider
+		);
 		if (provider) {
 			input.setLastProvider(provider);
 			savePersistence();
@@ -148,6 +178,17 @@
 	function handlePromptChange(value: string) {
 		input.setPrompt(value);
 	}
+
+	const hasAnyApiKey = () =>
+		!!($apiKeyStore.openai || $apiKeyStore.anthropic || $apiKeyStore.gemini);
+	function openApiKeys() {
+		modalStore.open('apiKeys');
+	}
+
+	function handleProviderChange(provider: 'openai' | 'anthropic' | 'gemini' | '') {
+		input.setLastProvider(provider);
+		savePersistence();
+	}
 </script>
 
 <main
@@ -155,6 +196,19 @@
 	role="application"
 	aria-label="Chat interface for Svelte component generation"
 >
+	{#if !hasAnyApiKey()}
+		<div
+			class="px-4 py-2 text-xs bg-amber-500/10 text-amber-700 border border-amber-500/20 flex items-center justify-between"
+		>
+			<div>
+				<strong>{t('errors.noApiKeysConfigured')}.</strong>
+				{t('loading.welcomeLong')}
+			</div>
+			<button class="underline" onclick={openApiKeys} aria-label={t('session.apiKeys')}
+				>{t('session.apiKeys')}</button
+			>
+		</div>
+	{/if}
 	<ChatScrollArea
 		messages={$chat.messages}
 		isGenerating={$chat.isGenerating}
@@ -168,11 +222,13 @@
 		sendOnEnter={input.sendOnEnter}
 		modelInput={input.modelInput}
 		pendingPlan={input.pendingPlan}
+		lastProvider={input.lastProvider}
 		onPromptChange={handlePromptChange}
 		{onSubmit}
 		onCancel={handleCancel}
 		{onBuildFromPlan}
 		onSendOnEnterChange={handleSendOnEnterChange}
 		onModelChange={handleModelChange}
+		onProviderChange={handleProviderChange}
 	/>
 </main>

@@ -41,6 +41,11 @@
 		loadCurrentVersion
 	} = createWorkspaceHandlers({ compilation, layout });
 
+	// Consistent local handler for toggling code panel
+	function handleToggleCode() {
+		layout.toggleCode();
+	}
+
 	// UI persistence setup
 	const uiPersist = createPersistor<{ showCode: boolean; preview: number; code: number }>({
 		key: 'ui',
@@ -109,13 +114,22 @@
 <main class="h-screen bg-background flex flex-col">
 	<AppHeader
 		showCode={$showCode}
-		onToggleCode={layout.toggleCode}
+		onToggleCode={handleToggleCode}
 		canUndo={$historyCanUndo}
 		canRedo={$historyCanRedo}
 		onUndo={handleUndo}
 		onRedo={handleRedo}
 		onSelectVersion={handleSelectVersion}
 	/>
+
+	<!-- {#if $loadingMessage}
+		<div
+			class="fixed left-3 bottom-3 z-40 bg-muted/80 text-foreground text-xs px-3 py-1 rounded shadow border"
+			aria-live="polite"
+		>
+			{$loadingMessage}
+		</div>
+	{/if} -->
 
 	<Splitpanes class="flex-1 min-h-0" horizontal={false}>
 		<!-- Chat Panel -->

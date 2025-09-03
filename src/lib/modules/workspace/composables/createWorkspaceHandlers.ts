@@ -187,6 +187,10 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 		historyStore.goToVersion(index);
 		compilation.setLoading(t('loading.teleporting'));
 		loadCurrentVersion();
+		// Ensure code panel is visible after restoring a version
+		if (!get(layout.showCode)) {
+			layout.toggleCode();
+		}
 	}
 
 	function handleCodePanesResize(e: CustomEvent): void {

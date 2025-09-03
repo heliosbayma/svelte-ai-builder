@@ -34,7 +34,8 @@ export const en = {
 		buildFromPlan: 'Build from plan',
 		autoModel: 'Auto model',
 		emptyState: 'Start a conversation to generate Svelte components',
-		emptySubtext: 'Try: "Create a responsive login form with validation"',
+		emptySubtext:
+			'Try: "Build a SaaS dashboard with sidebar navigation, KPI cards, a searchable & paginated table, and a settings drawer"',
 		conversationLabel: 'Chat conversation',
 		inputLabel: 'Component description input',
 		inputForm: 'Message input form',
@@ -184,9 +185,16 @@ export const en = {
 			'claude-3-5-haiku-20241022': 'Claude 3.5 Haiku'
 		},
 		gemini: {
-			'gemini-1.5-pro-latest': 'Gemini 1.5 Pro',
-			'gemini-1.5-flash-latest': 'Gemini 1.5 Flash'
+			'gemini-1_5-pro-latest': 'Gemini 1.5 Pro',
+			'gemini-1_5-flash-latest': 'Gemini 1.5 Flash'
 		}
+	},
+
+	// Provider names for display
+	providers: {
+		openai: 'OpenAI',
+		anthropic: 'Anthropic',
+		gemini: 'Gemini'
 	}
 } as const;
 

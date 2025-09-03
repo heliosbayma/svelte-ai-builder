@@ -13,18 +13,62 @@
 
 	let { isOpen, title, description, onClose, onSave, children }: Props = $props();
 	let modalRef = $state<HTMLDivElement>();
+	let lastActive: HTMLElement | null = null;
 
 	$effect(() => {
-		if (isOpen && modalRef) {
-			modalRef.focus();
+		if (isOpen) {
+			lastActive = (document.activeElement as HTMLElement) || null;
+			if (modalRef) {
+				modalRef.focus();
+			}
+		} else if (!isOpen && lastActive) {
+			// Return focus to trigger
+			try {
+				lastActive.focus();
+			} catch {}
 		}
 	});
+
+	function focusables(): HTMLElement[] {
+		const root = modalRef as HTMLElement | null;
+		if (!root) return [];
+		const selectors = [
+			'a[href]',
+			'button:not([disabled])',
+			'textarea:not([disabled])',
+			'input:not([disabled])',
+			'select:not([disabled])',
+			'[tabindex]:not([tabindex="-1"])'
+		];
+		return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')));
+	}
+
+	function trapTab(e: KeyboardEvent) {
+		if (e.key !== 'Tab') return;
+		const nodes = focusables();
+		if (nodes.length === 0) return;
+		const first = nodes[0];
+		const last = nodes[nodes.length - 1];
+		const active = document.activeElement as HTMLElement | null;
+		if (e.shiftKey) {
+			if (active === first || !modalRef?.contains(active)) {
+				e.preventDefault();
+				last.focus();
+			}
+		} else {
+			if (active === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
+	}
 
 	function handleKeyDown(e: KeyboardEvent) {
 		handleModalKeyboard(e, {
 			onEscape: onClose,
 			onMetaEnter: onSave
 		});
+		trapTab(e);
 	}
 
 	function handleBackdropClick(e: MouseEvent) {

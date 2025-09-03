@@ -2,6 +2,7 @@
 	import { Button } from '$lib/shared/ui/button';
 	import { apiKeyStore } from '$lib/core/stores/apiKeys';
 	import { allPersistKeys, PERSIST_VERSION } from '$lib/shared/utils';
+	import { success as toastSuccess } from '$lib/core/stores/toast';
 	import {
 		ChevronDown,
 		Download,
@@ -12,6 +13,7 @@
 		Bomb,
 		Settings
 	} from '@lucide/svelte';
+	import { t } from '$lib/shared/i18n';
 
 	interface Props {
 		isOpen: boolean;
@@ -22,6 +24,55 @@
 
 	let { isOpen, onToggle, onClose, onOpenApiKeys }: Props = $props();
 	let fileInput: HTMLInputElement | null = null;
+	let menuRef = $state<HTMLElement | null>(null);
+
+	function getMenuItems(): HTMLButtonElement[] {
+		return Array.from(menuRef?.querySelectorAll('button[role="menuitem"]') || []);
+	}
+
+	function focusItem(index: number) {
+		const items = getMenuItems();
+		if (items.length === 0) return;
+		const i = Math.max(0, Math.min(index, items.length - 1));
+		items[i].focus();
+	}
+
+	function handleMenuKeydown(e: KeyboardEvent) {
+		const items = getMenuItems();
+		if (items.length === 0) return;
+		const currentIndex = items.findIndex((el) => el === document.activeElement);
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			onClose();
+			return;
+		}
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			focusItem(currentIndex >= 0 ? currentIndex + 1 : 0);
+			return;
+		}
+		if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			focusItem(currentIndex >= 0 ? currentIndex - 1 : 0);
+			return;
+		}
+		if (e.key === 'Home') {
+			e.preventDefault();
+			focusItem(0);
+			return;
+		}
+		if (e.key === 'End') {
+			e.preventDefault();
+			focusItem(items.length - 1);
+			return;
+		}
+	}
+
+	$effect(() => {
+		if (isOpen) {
+			requestAnimationFrame(() => focusItem(0));
+		}
+	});
 
 	function exportSession() {
 		try {
@@ -96,14 +147,13 @@
 						localStorage.removeItem(key);
 					}
 				}
+				// Notify user and offer to reload with a toast
 				try {
-					alert(
-						`Imported session: ${versionsCount} versions, ${messagesCount} messages. Reloading…`
-					);
-				} catch {
-					// Ignore errors
-				}
-				location.reload();
+					toastSuccess(`Imported session: ${versionsCount} versions, ${messagesCount} messages.`, {
+						title: 'Session Imported',
+						action: { label: 'Reload', handler: () => location.reload() }
+					});
+				} catch {}
 			} catch {
 				// ignore parse errors
 			} finally {
@@ -151,8 +201,11 @@
 	{#if isOpen}
 		<button class="fixed inset-0 z-40" aria-label="Close session menu" onclick={onClose}></button>
 		<nav
+			bind:this={menuRef}
 			class="absolute right-0 z-50 mt-2 w-48 bg-popover border rounded-lg shadow-lg p-1"
 			aria-label="Session menu"
+			role="presentation"
+			onkeydown={handleMenuKeydown}
 		>
 			<section class="p-1 space-y-0.5">
 				<button
@@ -164,7 +217,7 @@
 					}}
 				>
 					<Download class="size-4 text-muted-foreground" />
-					Export Session
+					{t('session.exportSession')}
 				</button>
 				<button
 					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
@@ -175,18 +228,17 @@
 					}}
 				>
 					<Upload class="size-4 text-muted-foreground" />
-					Import Session
+					{t('session.importSession')}
 				</button>
 				<button
 					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
 					role="menuitem"
 					onclick={() => {
 						onOpenApiKeys();
-						onClose();
 					}}
 				>
 					<Key class="size-4 text-muted-foreground" />
-					API Keys
+					{t('session.apiKeys')}
 				</button>
 				<button
 					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
@@ -197,7 +249,7 @@
 					}}
 				>
 					<Palette class="size-4 text-muted-foreground" />
-					Toggle Theme
+					{t('session.toggleTheme')}
 				</button>
 			</section>
 
@@ -213,7 +265,7 @@
 					}}
 				>
 					<Trash2 class="size-4 opacity-70" />
-					Clear API Keys
+					{t('session.clearApiKeys')}
 				</button>
 				<button
 					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3 text-destructive hover:text-destructive"
@@ -224,7 +276,7 @@
 					}}
 				>
 					<Bomb class="size-4 opacity-70" />
-					Clear Session
+					{t('session.clearSession')}
 				</button>
 			</div>
 		</nav>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { historyStore } from '$lib/core/stores/history';
-	import { Edit3, X } from '@lucide/svelte';
+	import { Edit3, X, Code } from '@lucide/svelte';
 
 	interface Props {
 		isOpen: boolean;
@@ -11,10 +11,21 @@
 	let { isOpen, onClose, onSelectVersion }: Props = $props();
 
 	const history = historyStore;
+	let query = $state('');
 
 	function selectVersion(index: number) {
 		onSelectVersion?.(index);
 		onClose();
+	}
+
+	function filteredIndexes(): number[] {
+		const q = query.trim().toLowerCase();
+		const all = $history.versions.map((_, i) => i);
+		if (!q) return all.slice();
+		return all.filter((i) => {
+			const v = $history.versions[i];
+			return (v.label && v.label.toLowerCase().includes(q)) || v.prompt.toLowerCase().includes(q);
+		});
 	}
 </script>
 
@@ -37,11 +48,22 @@
 				</button>
 			</div>
 			<div class="p-4">
+				<div class="mb-3">
+					<input
+						type="search"
+						placeholder="Search versions..."
+						class="w-full px-3 py-2 text-sm border rounded-md bg-background"
+						value={query}
+						oninput={(e) => (query = (e.currentTarget as HTMLInputElement).value)}
+						aria-label="Search history"
+					/>
+				</div>
 				{#if $history.versions.length === 0}
 					<p class="text-sm text-muted-foreground">No versions yet.</p>
 				{:else}
 					<ul class="space-y-2">
-						{#each $history.versions as v, idx (v.id)}
+						{#each filteredIndexes() as idx (idx)}
+							{@const v = $history.versions[idx]}
 							<li>
 								{#if idx === $history.currentIndex}
 									<div
@@ -66,40 +88,36 @@
 										</div>
 									</div>
 								{:else}
-									<button
-										class="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors border border-transparent hover:border-border"
-										onclick={() => selectVersion(idx)}
-										aria-current="false"
-										aria-label="Revert to version"
+									<div
+										class="w-full p-3 rounded-lg hover:bg-accent transition-colors border border-transparent hover:border-border"
 									>
 										<div class="flex items-center justify-between mb-2">
-											<div class="text-xs text-muted-foreground">
-												{new Date(v.timestamp).toLocaleTimeString()}
+											<div class="text-xs text-muted-foreground flex items-center gap-2">
+												<span>{new Date(v.timestamp).toLocaleTimeString()}</span>
+												<span class="opacity-70">{v.code?.length || 0} chars</span>
 											</div>
-											<span
-												class="p-1 hover:bg-accent rounded transition-colors cursor-pointer inline-flex items-center justify-center"
-												onclick={(e) => {
-													e.stopPropagation();
-													const name = prompt('Label this version:', v.label || '');
-													if (name != null)
-														history.updateCurrentVersion({ label: name.trim() || undefined });
-												}}
-												onkeydown={(e) => {
-													if (e.key === 'Enter' || e.key === ' ') {
-														e.preventDefault();
-														e.stopPropagation();
+											<div class="flex items-center gap-1">
+												<button
+													class="p-1 hover:bg-accent rounded transition-colors"
+													onclick={() => selectVersion(idx)}
+													title="Restore & open code"
+													aria-label="Restore and open code"
+												>
+													<Code class="size-4" />
+												</button>
+												<button
+													class="p-1 hover:bg-accent rounded transition-colors"
+													onclick={() => {
 														const name = prompt('Label this version:', v.label || '');
 														if (name != null)
 															history.updateCurrentVersion({ label: name.trim() || undefined });
-													}
-												}}
-												role="button"
-												tabindex="0"
-												aria-label="Rename version"
-												title="Rename"
-											>
-												<Edit3 class="size-3" />
-											</span>
+													}}
+													title="Rename"
+													aria-label="Rename version"
+												>
+													<Edit3 class="size-3" />
+												</button>
+											</div>
 										</div>
 										<div class="text-sm line-clamp-2">
 											{#if v.label}
@@ -107,7 +125,7 @@
 											{/if}
 											{v.prompt}
 										</div>
-									</button>
+									</div>
 								{/if}
 							</li>
 						{/each}

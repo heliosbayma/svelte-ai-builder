@@ -2,6 +2,7 @@
 	import { Input } from '$lib/shared/ui/input';
 	import { Label } from '$lib/shared/ui/label';
 	import type { ApiKeys } from '$lib/core/stores/apiKeys';
+	import { Button } from '$lib/shared/ui/button';
 
 	interface Props {
 		provider: {
@@ -16,6 +17,7 @@
 	}
 
 	let { provider, value, error, onInput }: Props = $props();
+	let reveal = $state(false);
 
 	function handleInput(e: Event) {
 		if (e.currentTarget instanceof HTMLInputElement) {
@@ -38,7 +40,7 @@
 	</Label>
 	<Input
 		id={provider.key + '-key'}
-		type="password"
+		type={reveal ? 'text' : 'password'}
 		placeholder={provider.placeholder}
 		value={value || ''}
 		oninput={handleInput}
@@ -50,6 +52,18 @@
 		aria-describedby={provider.key + '-key-error'}
 		class={error ? 'border-red-500 focus:ring-red-500' : ''}
 	/>
+	<div class="flex items-center justify-between">
+		<button
+			class="text-xs text-muted-foreground hover:underline"
+			type="button"
+			onclick={() => (reveal = !reveal)}
+			aria-pressed={reveal}
+			aria-label={reveal ? 'Hide API key' : 'Show API key'}
+		>
+			{reveal ? 'Hide' : 'Show'}
+		</button>
+		<span class="text-[11px] text-muted-foreground">Keys are stored locally and encrypted</span>
+	</div>
 	{#if error}
 		<p id={provider.key + '-key-error'} class="text-xs text-red-500 animate-in fade-in">
 			{error}

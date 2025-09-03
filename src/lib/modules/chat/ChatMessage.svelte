@@ -9,6 +9,8 @@
 		EyeOff as EyeOffIcon
 	} from '@lucide/svelte';
 	import { safeSessionStorage } from '$lib/shared/utils/storage';
+	import { t } from '$lib/shared/i18n';
+	import { createEventDispatcher } from 'svelte';
 
 	interface Props {
 		message: ChatMessage;
@@ -18,6 +20,7 @@
 
 	let { message, onUseCode, onRefine }: Props = $props();
 	let expanded = $state(false);
+	const dispatch = createEventDispatcher<{ retry: { messageId: string } }>();
 
 	function handleCopy() {
 		if (message.generatedCode) {
@@ -46,6 +49,18 @@
 		}
 	});
 
+	// Auto-expand generated code after idle if user hasn't interacted
+	$effect(() => {
+		if (message.generatedCode && !message.streaming && !message.error && !expanded) {
+			const id = setTimeout(() => {
+				expanded = true;
+				const key = `msg_expanded_${message.id}`;
+				safeSessionStorage.set(key, '1');
+			}, 2000);
+			return () => clearTimeout(id);
+		}
+	});
+
 	function toggleExpanded() {
 		expanded = !expanded;
 		const key = `msg_expanded_${message.id}`;
@@ -60,7 +75,7 @@
 	class="{message.role === 'user' ? 'mb-3' : 'mb-8'} flex {message.role === 'user'
 		? 'justify-end'
 		: 'justify-start'} w-full {message.role === 'user' ? 'order-2' : 'order-1'}"
-	aria-label={message.role === 'user' ? 'User message' : 'Assistant message'}
+	aria-label={message.role === 'user' ? t('chat.userMessage') : t('chat.assistantMessage')}
 	role="group"
 >
 	{#if message.role === 'user'}
@@ -83,6 +98,15 @@
 				>
 					<h4 class="text-destructive text-sm font-medium mb-2">Error</h4>
 					<p class="text-destructive text-sm">{message.error}</p>
+					<div class="mt-2">
+						<button
+							class="text-xs underline text-destructive hover:opacity-80"
+							onclick={() => dispatch('retry', { messageId: message.id })}
+							aria-label="Retry with default model"
+						>
+							Retry with default model
+						</button>
+					</div>
 				</section>
 			{:else if message.generatedCode && !message.streaming}
 				<!-- Code generation result -->
@@ -128,7 +152,8 @@
 							aria-label="Code preview"
 						>
 							<p class="text-sm text-muted-foreground">
-								{getCodePreview(message.generatedCode)} - Click "Show" below to expand.
+								{getCodePreview(message.generatedCode)} - Click "{t('actions.show')}" below to
+								expand.
 							</p>
 						</div>
 					{/if}
@@ -175,7 +200,7 @@
 							class="flex items-center gap-1 mt-3 text-xs text-muted-foreground"
 							role="status"
 							aria-live="polite"
-							aria-label="AI is generating response"
+							aria-label={t('chat.generating')}
 						>
 							<div class="w-1 h-1 bg-current rounded-full animate-pulse" aria-hidden="true"></div>
 							<div
@@ -186,7 +211,7 @@
 								class="w-1 h-1 bg-current rounded-full animate-pulse delay-200"
 								aria-hidden="true"
 							></div>
-							<span class="ml-2">Generating...</span>
+							<span class="ml-2">{t('chat.generating')}</span>
 						</div>
 					{/if}
 				</section>
@@ -198,29 +223,30 @@
 	{#if message.role === 'assistant' && message.generatedCode && !message.streaming && !message.error}
 		<div
 			class="mt-1 flex items-center justify-between text-xs text-muted-foreground"
-			aria-label="Message actions"
+			aria-label={t('chat.messageActions')}
 		>
 			<button
 				class="flex items-center gap-2 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
 				onclick={toggleExpanded}
 				aria-expanded={expanded}
 				aria-controls={`code-${message.id}`}
-				title={expanded ? 'Hide code' : 'Show code'}
+				title={expanded ? t('actions.hide') : t('actions.show')}
+				aria-label={expanded ? t('actions.hide') : t('actions.show')}
 			>
 				{#if expanded}
 					<EyeOffIcon class="w-4 h-4" />
 				{:else}
 					<EyeIcon class="w-4 h-4" />
 				{/if}
-				<span>{expanded ? 'Hide' : 'Show'}</span>
+				<span>{expanded ? t('actions.hide') : t('actions.show')}</span>
 			</button>
 
 			<div class="flex items-center gap-1">
 				<button
 					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
 					onclick={handleUseCode}
-					aria-label="Use this generated code in the editor"
-					title="Use code"
+					aria-label={t('a11y.useCodeInEditor')}
+					title={t('actions.useCode')}
 				>
 					<CodeIcon class="w-4 h-4" />
 				</button>
@@ -228,8 +254,8 @@
 				<button
 					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
 					onclick={handleCopy}
-					aria-label="Copy code"
-					title="Copy code"
+					aria-label={t('a11y.copyCode')}
+					title={t('actions.copy')}
 				>
 					<CopyIcon class="w-4 h-4" />
 				</button>
@@ -237,8 +263,8 @@
 				<button
 					class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer px-2 py-1 rounded hover:bg-accent/50"
 					onclick={handleRefine}
-					aria-label="Refine this generated component"
-					title="Refine"
+					aria-label={t('a11y.refineComponent')}
+					title={t('actions.refine')}
 				>
 					<Wand2Icon class="w-4 h-4" />
 				</button>

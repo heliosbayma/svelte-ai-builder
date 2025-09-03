@@ -30,14 +30,14 @@ export class LayoutState {
 	}
 
 	/** Toggle visibility of the code panel. */
-	toggleCode() {
+	toggleCode = () => {
 		this._showCode.update((value) => !value);
-	}
+	};
 
 	/** Toggle the diff view in the code panel. */
-	toggleDiff() {
+	toggleDiff = () => {
 		this._showDiff.update((value) => !value);
-	}
+	};
 
 	/** Persist the last preview pane size. */
 	setPreviewSize(size: number) {
