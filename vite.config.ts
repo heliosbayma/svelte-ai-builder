@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
 	server: { host: '0.0.0.0' },
 	plugins: [tailwindcss(), sveltekit()],
+	ssr: {
+		noExternal: process.env.NODE_ENV === 'production' ? ['@sveltejs/kit'] : []
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
