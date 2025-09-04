@@ -3,7 +3,7 @@ import type { LLMProviderType } from '$lib/core/ai/services/llm';
 import { svelteCompiler } from '$lib/core/compiler';
 import { llmClient } from '$lib/core/ai/services/llm';
 import { apiKeyStore } from '$lib/core/stores/apiKeys';
-import { historyStore, historyCurrentVersion } from '$lib/core/stores/history';
+import { historyStore, historyCurrentVersion } from '$lib/core/stores/historyScoped';
 import { chatStore } from '$lib/core/stores/chat';
 import { compiledCache, renderCompileErrorHtml, renderGenericErrorHtml } from '$lib/shared/utils';
 import { t } from '$lib/shared/i18n';

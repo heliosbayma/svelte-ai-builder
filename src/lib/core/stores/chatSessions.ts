@@ -27,38 +27,8 @@ function createChatSessionsStore() {
 		version: 1,
 		debounceMs: 200
 	});
-	const restored0 = persist.load(initial);
-	// Provide a mocked list if empty for testing UX
-	const restored: ChatSessionsState = restored0.sessions.length
-		? restored0
-		: {
-				sessions: [
-					{
-						id: 'mock-1',
-						title: 'Landing page hero',
-						createdAt: Date.now() - 86400000,
-						updatedAt: Date.now() - 86000000
-					},
-					{
-						id: 'mock-2',
-						title: 'Pricing table v2',
-						createdAt: Date.now() - 5400000,
-						updatedAt: Date.now() - 5300000
-					},
-					{
-						id: 'mock-3',
-						title: 'Signup form tweaks',
-						createdAt: Date.now() - 3600000,
-						updatedAt: Date.now() - 3500000
-					}
-				],
-				currentId: null,
-				messagesById: {
-					'mock-1': [],
-					'mock-2': [],
-					'mock-3': []
-				}
-			};
+	
+	const restored = persist.load(initial);
 	const { subscribe, update } = writable<ChatSessionsState>(restored);
 
 	function touch(meta: ChatSessionMeta): ChatSessionMeta {
@@ -103,10 +73,12 @@ function createChatSessionsStore() {
 				return next;
 			});
 		},
-		setCurrent: (id: string) => {
+		setCurrent: (id: string | null) => {
 			update((s) => {
-				const exists = s.sessions.some((m) => m.id === id);
-				if (!exists) return s;
+				if (id !== null) {
+					const exists = s.sessions.some((m) => m.id === id);
+					if (!exists) return s;
+				}
 				const next = { ...s, currentId: id };
 				persist.save(next);
 				return next;
@@ -126,6 +98,9 @@ function createChatSessionsStore() {
 		getCurrentMessages: (): ChatMessage[] => {
 			const s = get({ subscribe });
 			return s.currentId ? s.messagesById[s.currentId] || [] : [];
+		},
+		getState: (): ChatSessionsState => {
+			return get({ subscribe });
 		}
 	};
 }

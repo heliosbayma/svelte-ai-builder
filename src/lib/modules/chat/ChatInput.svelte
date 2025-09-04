@@ -2,8 +2,9 @@
 	import { Button } from '$lib/shared/ui/button';
 	import { Textarea } from '$lib/shared/ui/textarea';
 	import { t } from '$lib/shared/utils/i18n';
-	import { Send, X, Sparkles } from '@lucide/svelte';
+	import { Send, X, Sparkles, ChevronDown } from '@lucide/svelte';
 	import { LLM_PROVIDERS } from '$lib/shared/constants/providers';
+	import { en } from '$lib/shared/i18n';
 
 	interface Props {
 		currentPrompt: string;
@@ -19,7 +20,7 @@
 		onSendOnEnterChange: (checked: boolean) => void;
 		onModelChange: (model: string) => void;
 		onProviderChange?: (provider: 'openai' | 'anthropic' | 'gemini' | '') => void;
-		showProviderChips?: boolean;
+		showIdeasButton?: boolean;
 	}
 
 	let {
@@ -36,7 +37,7 @@
 		onSendOnEnterChange,
 		onModelChange,
 		onProviderChange,
-		showProviderChips = false
+		showIdeasButton = false
 	}: Props = $props();
 
 	function autoGrow(e: Event) {
@@ -91,218 +92,122 @@
 		const p = LLM_PROVIDERS.find((p) => p.key === key);
 		return p?.label ?? key;
 	}
+
+	function insertIdea() {
+		const pool = en.inspirations as readonly string[];
+		if (!pool?.length) return;
+		const idea = pool[Math.floor(Math.random() * pool.length)];
+		currentPrompt = idea;
+		// notify parent via effect
+		onPromptChange(currentPrompt);
+		// resize textarea if present
+		const el = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
+		if (el) {
+			el.value = idea;
+			el.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+	}
 </script>
 
-<form
-	onsubmit={handleSubmit}
-	class="p-4 space-y-3 max-w-full overflow-hidden sm:block"
-	aria-label={t('chat.inputForm')}
->
-	<!-- Mobile layout -->
-	<div class="sm:hidden space-y-2">
-		<!-- Header row with model and X button -->
-		<div class="flex items-center justify-between">
-			<select
-				class="text-xs bg-transparent text-muted-foreground border-0 outline-none focus:outline-none focus:ring-0 hover:text-foreground cursor-pointer appearance-none"
-				value={modelInput}
-				onchange={handleModelChange}
-				disabled={isGenerating}
-				aria-label={t('chat.modelOverride')}
-				title={t('chat.modelOverride')}
-			>
-				<option value="">{t('chat.autoModel')}</option>
-				<optgroup label={labelForProvider('openai')}>
-					<option value="gpt-4o">{t('models.openai.gpt-4o')}</option>
-					<option value="gpt-4o-mini">{t('models.openai.gpt-4o-mini')}</option>
-				</optgroup>
-				<optgroup label={labelForProvider('anthropic')}>
-					<option value="claude-3-5-sonnet-20241022"
-						>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
-					>
-					<option value="claude-3-5-haiku-20241022"
-						>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
-					>
-				</optgroup>
-				<optgroup label={labelForProvider('gemini')}>
-					<option value="gemini-1.5-pro-latest">{t('models.gemini.gemini-1_5-pro-latest')}</option>
-					<option value="gemini-1.5-flash-latest"
-						>{t('models.gemini.gemini-1_5-flash-latest')}</option
-					>
-				</optgroup>
-			</select>
-			{#if isGenerating}
-				<Button
-					variant="ghost"
-					size="sm"
-					onclick={onCancel}
-					class="h-6 w-6 p-0"
-					aria-label={t('a11y.cancelGeneration')}
-				>
-					<X class="w-4 h-4" />
-				</Button>
-			{/if}
-		</div>
-		<!-- Single line input with send button -->
-		<div class="flex items-center gap-2">
-			<input
-				type="text"
-				bind:value={currentPrompt}
-				onkeydown={handleKeydown}
-				placeholder={t('chat.placeholder')}
-				class="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm"
-				disabled={isGenerating}
-				aria-label={t('chat.inputLabel')}
-			/>
-			<Button
-				type="submit"
-				size="sm"
-				disabled={!currentPrompt.trim() || isGenerating}
-				class="h-10 w-10 p-0"
-				aria-label={t('actions.send')}
-			>
-				<Send class="w-4 h-4" />
-			</Button>
-		</div>
-	</div>
-
-	<!-- Desktop layout (unchanged) -->
-	<div class="hidden sm:block">
-		<fieldset>
-			<legend class="sr-only">Send message to generate Svelte component</legend>
+<form onsubmit={handleSubmit} aria-label={t('chat.inputForm')}>
+	<!-- Single composer-style input used across app -->
+	<div class="px-4 py-3">
+		<div
+			class="relative rounded-2xl border bg-background/70 backdrop-blur px-3 py-3 shadow-sm pb-14"
+		>
 			<Textarea
 				bind:value={currentPrompt}
 				onkeydown={handleKeydown}
 				oninput={autoGrow}
 				placeholder={t('chat.placeholder')}
-				class="w-full min-h-[60px] max-h-[200px] resize-none"
-				style="max-width: 100%; overflow-x: hidden; word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;"
+				class="w-full min-h-[68px] max-h-[240px] resize-none border-0 focus:ring-0 pr-16 overflow-x-hidden break-words whitespace-pre-wrap text-muted-foreground placeholder:text-muted-foreground/60"
 				disabled={isGenerating}
 				aria-label={t('chat.inputLabel')}
 				data-chat-textarea
 			/>
-		</fieldset>
-	</div>
 
-	<!-- Action rows (desktop only) -->
-	<div class="hidden sm:flex flex-wrap items-center justify-between gap-2">
-		<div class="flex items-center gap-2">
-			{#if isGenerating}
-				<Button
-					variant="outline"
-					size="sm"
-					onclick={onCancel}
-					class="h-8 px-3 text-xs gap-1.5"
-					aria-label={t('a11y.cancelGeneration')}
-				>
-					<div
-						class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"
-						aria-hidden="true"
-					></div>
-					{t('actions.cancel')}
-				</Button>
-			{:else}
-				<Button
-					type="submit"
-					size="sm"
-					disabled={!currentPrompt.trim()}
-					class="h-8 px-3 text-xs gap-1.5"
-					aria-label={t('actions.send')}
-				>
-					<Send class="w-3.5 h-3.5" />
-					{t('actions.send')}
-				</Button>
-				{#if pendingPlan}
+			<!-- Bottom controls: left checkbox; right model select + icon-only send -->
+			<div class="absolute left-3 right-3 bottom-3 flex items-center justify-between gap-2">
+				<div class="text-xs text-muted-foreground">
+					<label class="flex items-center gap-1.5 cursor-pointer">
+						<input
+							type="checkbox"
+							checked={sendOnEnter}
+							oninput={handleToggleSendOnEnter}
+							class="w-3 h-3"
+						/>
+						<span>{sendOnEnter ? t('chat.sendOnEnter') : t('chat.sendWithCmd')}</span>
+					</label>
+				</div>
+
+				<div class="flex items-center gap-2 sm:gap-4">
+					{#if showIdeasButton}
+						<button
+							class="h-8 px-2 text-[10px] rounded border border-border/40 bg-card/30 hover:bg-card/50 text-muted-foreground cursor-pointer"
+							type="button"
+							onclick={insertIdea}
+							aria-label={en.actions.ideas}
+						>
+							{en.actions.ideas}
+						</button>
+					{/if}
+					<select
+						class="h-8 px-2 text-[10px] rounded text-muted-foreground border border-border/40 bg-card/30 hover:bg-card/50 outline-none focus:outline-none focus:ring-0 cursor-pointer"
+						value={modelInput}
+						onchange={handleModelChange}
+						disabled={isGenerating}
+						aria-label={t('chat.modelOverride')}
+						title={t('chat.modelOverride')}
+					>
+						<option value="">{t('chat.autoModel')}</option>
+						<optgroup label={labelForProvider('openai')}>
+							<option value="gpt-4o">{t('models.openai.gpt-4o')}</option>
+							<option value="gpt-4o-mini">{t('models.openai.gpt-4o-mini')}</option>
+						</optgroup>
+						<optgroup label={labelForProvider('anthropic')}>
+							<option value="claude-3-5-sonnet-20241022"
+								>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
+							>
+							<option value="claude-3-5-haiku-20241022"
+								>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
+							>
+						</optgroup>
+						<optgroup label={labelForProvider('gemini')}>
+							<option value="gemini-1.5-pro-latest"
+								>{t('models.gemini.gemini-1_5-pro-latest')}</option
+							>
+							<option value="gemini-1.5-flash-latest"
+								>{t('models.gemini.gemini-1_5-flash-latest')}</option
+							>
+						</optgroup>
+					</select>
+					<Button
+						type="submit"
+						size="sm"
+						disabled={!currentPrompt.trim() || isGenerating}
+						class="h-8 w-8 p-0 rounded-full"
+						aria-label={t('actions.send')}
+					>
+						<Send class="w-4 h-4" />
+					</Button>
+				</div>
+			</div>
+
+			{#if pendingPlan}
+				<div class="mt-2">
 					<Button
 						variant="outline"
 						size="sm"
 						onclick={onBuildFromPlan}
 						disabled={isGenerating}
-						class="h-8 px-3 text-xs gap-1.5"
+						class="h-7 px-2 text-xs gap-1.5"
 						aria-label={t('a11y.buildFromPlan')}
 					>
 						<Sparkles class="w-3.5 h-3.5" />
 						{t('actions.build')}
 					</Button>
-				{/if}
+				</div>
 			{/if}
 		</div>
-
-		<!-- Model selector -->
-		<select
-			class="h-8 text-xs bg-transparent text-slate-500 border-0 outline-none focus:outline-none focus:ring-0 hover:text-foreground cursor-pointer appearance-none"
-			value={modelInput}
-			onchange={handleModelChange}
-			disabled={isGenerating}
-			aria-label={t('chat.modelOverride')}
-			title={t('chat.modelOverride')}
-		>
-			<option value="">{t('chat.autoModel')}</option>
-			<optgroup label={labelForProvider('openai')}>
-				<option value="gpt-4o">{t('models.openai.gpt-4o')}</option>
-				<option value="gpt-4o-mini">{t('models.openai.gpt-4o-mini')}</option>
-			</optgroup>
-			<optgroup label={labelForProvider('anthropic')}>
-				<option value="claude-3-5-sonnet-20241022"
-					>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
-				>
-				<option value="claude-3-5-haiku-20241022"
-					>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
-				>
-			</optgroup>
-			<optgroup label={labelForProvider('gemini')}>
-				<option value="gemini-1.5-pro-latest">{t('models.gemini.gemini-1_5-pro-latest')}</option>
-				<option value="gemini-1.5-flash-latest">{t('models.gemini.gemini-1_5-flash-latest')}</option
-				>
-			</optgroup>
-		</select>
-
-		<!-- Right side options -->
-		<div class="flex items-center gap-3 text-xs text-slate-500">
-			<label
-				class="flex items-center gap-1.5 cursor-pointer hover:text-foreground transition-colors"
-			>
-				<input
-					type="checkbox"
-					checked={sendOnEnter}
-					oninput={handleToggleSendOnEnter}
-					aria-label={t('a11y.toggleSendOnEnter')}
-					class="w-3 h-3"
-				/>
-				<span>{sendOnEnter ? t('chat.sendOnEnter') : t('chat.sendWithCmd')}</span>
-			</label>
-		</div>
-
-		{#if showProviderChips}
-			<!-- Provider chips (wrap on small widths) -->
-			<div
-				class="flex items-center gap-1 flex-wrap basis-full mt-2"
-				aria-label="Provider selection"
-			>
-				<button
-					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'openai' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-					disabled={isGenerating}
-					onclick={() => onProviderChange?.('openai')}
-					title={labelForProvider('openai')}
-					aria-pressed={lastProvider === 'openai'}
-					aria-label={labelForProvider('openai')}>{labelForProvider('openai')}</button
-				>
-				<button
-					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'anthropic' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-					disabled={isGenerating}
-					onclick={() => onProviderChange?.('anthropic')}
-					title={labelForProvider('anthropic')}
-					aria-pressed={lastProvider === 'anthropic'}
-					aria-label={labelForProvider('anthropic')}>{labelForProvider('anthropic')}</button
-				>
-				<button
-					class={`h-8 px-2 text-xs rounded-md border shrink-0 ${lastProvider === 'gemini' ? 'bg-accent' : 'bg-background'} ${isGenerating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-					disabled={isGenerating}
-					onclick={() => onProviderChange?.('gemini')}
-					title={labelForProvider('gemini')}
-					aria-pressed={lastProvider === 'gemini'}
-					aria-label={labelForProvider('gemini')}>{labelForProvider('gemini')}</button
-				>
-			</div>
-		{/if}
 	</div>
 </form>

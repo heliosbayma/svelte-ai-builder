@@ -1,5 +1,10 @@
 import type { LLMResponse, LLMProviderType } from './types';
-import type { OpenAIResponse, AnthropicResponse, GeminiResponse, ProviderResponse } from '$lib/types/llm';
+import type {
+	OpenAIResponse,
+	AnthropicResponse,
+	GeminiResponse,
+	ProviderResponse
+} from '$lib/types/llm';
 
 export class ResponseParser {
 	parseResponse(provider: LLMProviderType, data: unknown): LLMResponse {
@@ -30,7 +35,8 @@ export class ResponseParser {
 						usage: {
 							promptTokens: response.usage?.input_tokens || 0,
 							completionTokens: response.usage?.output_tokens || 0,
-							totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+							totalTokens:
+								(response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
 						}
 					};
 				}
@@ -84,11 +90,55 @@ export class ResponseParser {
 	}
 
 	getErrorMessage(provider: LLMProviderType, status: number, error: string): string {
+		// Try to parse structured error information (handles nested JSON-as-string cases)
+		let parsed: any = null;
+		try {
+			const outer = JSON.parse(error);
+			if (outer && typeof outer.error === 'string') {
+				try {
+					parsed = JSON.parse(outer.error);
+				} catch {
+					parsed = outer;
+				}
+			} else {
+				parsed = outer;
+			}
+		} catch {
+			// ignore parse errors; fall back to generic mapping
+		}
+
+		// Provider-aware special cases
+		const providerSpecificParsed = (() => {
+			try {
+				const code = parsed?.error?.code || parsed?.code || '';
+				const message: string = parsed?.error?.message || parsed?.message || '';
+				if (provider === 'openai') {
+					if (code === 'model_not_found' || /model(.+)?not found/i.test(message)) {
+						return 'Model not found or unavailable. Try a different OpenAI model.';
+					}
+				}
+				if (provider === 'anthropic') {
+					if (/Overloaded|Please try again/.test(message)) {
+						return 'Anthropic is overloaded. Please try again in a moment.';
+					}
+				}
+				if (provider === 'gemini') {
+					if (/quota|exceeded/i.test(message)) {
+						return 'Gemini quota exceeded. Check your Google AI Studio limits.';
+					}
+				}
+				return '';
+			} catch {
+				return '';
+			}
+		})();
+		if (providerSpecificParsed) return providerSpecificParsed;
+
 		const baseMessages = {
 			400: 'Invalid request format',
 			401: 'API key is invalid or missing',
 			403: 'Access forbidden - check your API key permissions',
-			404: 'API endpoint not found',
+			404: 'Not found',
 			429: 'Rate limit exceeded - please try again later',
 			500: 'Server error - please try again',
 			503: 'Service temporarily unavailable'
@@ -101,7 +151,7 @@ export class ResponseParser {
 		};
 
 		return (
-			providerSpecific[provider]?.[status as keyof typeof providerSpecific[typeof provider]] ||
+			providerSpecific[provider]?.[status as keyof (typeof providerSpecific)[typeof provider]] ||
 			baseMessages[status as keyof typeof baseMessages] ||
 			`API Error (${status}): ${error}`
 		);

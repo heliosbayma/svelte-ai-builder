@@ -10,14 +10,21 @@
 	import { modalStore } from '$lib/core/stores/modals';
 	import { t } from '$lib/shared/i18n';
 	import { chatSessionsStore } from '$lib/core/stores/chatSessions';
+	import InlineNotice from '$lib/shared/components/InlineNotice.svelte';
 
 	interface Props {
 		onCodeGenerated?: (code: string, prompt: string, provider: LLMProviderType) => void;
 		onStartGenerating?: () => void;
 		showMessages?: boolean;
+		inlineInput?: boolean;
 	}
 
-	let { onCodeGenerated, onStartGenerating, showMessages = true }: Props = $props();
+	let {
+		onCodeGenerated,
+		onStartGenerating,
+		showMessages = true,
+		inlineInput = false
+	}: Props = $props();
 
 	// Structured input state
 	const input = (() => {
@@ -76,6 +83,20 @@
 	// Subscribe to chat store
 	const chat = chatStore;
 
+	// Detect a newly created session (no messages and untouched metadata)
+	let isBrandNewSession = $state(false);
+	$effect(() => {
+		const state = $chatSessionsStore;
+		const id = state.currentId;
+		if (!id) {
+			isBrandNewSession = false;
+			return;
+		}
+		const meta = state.sessions.find((m) => m.id === id);
+		const msgs = state.messagesById[id] || [];
+		isBrandNewSession = !!meta && msgs.length === 0 && meta.createdAt === meta.updatedAt;
+	});
+
 	// Persist last-used model/provider (client-only)
 	const chatUiPersist = createPersistor<{
 		lastModel?: string;
@@ -99,11 +120,18 @@
 
 	const { handleSubmit, handleBuildFromPlan } = createChatHandlers({
 		onCodeGenerated,
-		onStartGenerating
+		onStartGenerating,
+		onProviderChange: (p) => {
+			input.setLastProvider(p);
+			if (p === 'openai' && input.modelInput && !input.modelInput.startsWith('gpt-')) {
+				input.setModelInput('gpt-4o-mini');
+			}
+			savePersistence();
+		}
 	});
 	// handlePlan available for future use
 
-	let inputContainer: HTMLDivElement | null = null;
+	let inputContainer: HTMLElement | null = null;
 
 	function setInputHeightVar() {
 		if (!inputContainer) return;
@@ -136,14 +164,16 @@
 		const provider = await handleSubmit(input.currentPrompt, input.modelInput, input.lastProvider);
 		if (provider) {
 			input.setLastProvider(provider);
+			if (provider === 'openai' && input.modelInput && !input.modelInput.startsWith('gpt-')) {
+				input.setModelInput('gpt-4o-mini');
+			}
 			savePersistence();
-		}
-
-		input.clearPrompt();
-		const inputEl = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
-		if (inputEl) {
-			inputEl.style.height = 'auto';
-			inputEl.focus();
+			input.clearPrompt();
+			const inputEl = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
+			if (inputEl) {
+				inputEl.style.height = 'auto';
+				inputEl.focus();
+			}
 		}
 	}
 
@@ -219,40 +249,41 @@
 	}
 </script>
 
-<main
-	class="h-full flex flex-col"
+<article
+	class="flex flex-col h-full"
 	role="application"
 	aria-label="Chat interface for Svelte component generation"
 >
 	{#if $apiKeysReady && !hasAnyApiKey()}
-		<div
-			class="px-4 py-2 text-xs bg-amber-500/10 text-amber-700 border border-amber-500/20 flex items-center justify-between"
-		>
-			<div>
-				<strong>{t('errors.noApiKeysConfigured')}.</strong>
-				{t('validation.apiKeyMinRequired')}
-			</div>
-			<button class="underline" onclick={openApiKeys} aria-label={t('session.apiKeys')}
-				>{t('session.apiKeys')}</button
-			>
-		</div>
+		<InlineNotice
+			type="warning"
+			title={t('errors.noApiKeysConfigured')}
+			message={t('validation.apiKeyMinRequired')}
+			actionLabel={t('session.apiKeys')}
+			onAction={openApiKeys}
+			class="w-[30rem] mx-auto mt-6 mb-3"
+		/>
 	{/if}
 	<!-- Conversation list -->
 	{#if showMessages}
-		<div class="flex-1 min-h-0">
+		<section class="flex-1 min-h-0 overflow-y-auto">
 			<ChatScrollArea
 				messages={$chat.messages}
 				isGenerating={$chat.isGenerating}
 				onUseCode={handleUseCode}
 				onRefine={handleRefine}
-				class="flex-1 min-h-0 pb-20 sm:pb-0"
+				class="h-full"
+				emptyTitleOverride={isBrandNewSession ? t('chat.newChatTitle') : undefined}
+				emptySubtextOverride={isBrandNewSession ? t('chat.newChatSubtext') : undefined}
 			/>
-		</div>
+		</section>
 	{/if}
 
-	<div
+	<section
 		bind:this={inputContainer}
-		class="fixed left-0 right-0 bottom-0 z-40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-t px-0 sm:sticky sm:left-auto sm:right-auto sm:bottom-0 sm:z-10"
+		class={inlineInput
+			? 'relative z-10 bg-transparent px-0'
+			: 'flex-shrink-0 z-10 px-0 border-t border-border/50'}
 		data-chat-input
 	>
 		<ChatInput
@@ -269,7 +300,10 @@
 			onSendOnEnterChange={handleSendOnEnterChange}
 			onModelChange={handleModelChange}
 			onProviderChange={handleProviderChange}
+			showIdeasButton={inlineInput}
 		/>
-		<div class="h-[max(env(safe-area-inset-bottom),0px)]"></div>
-	</div>
-</main>
+		{#if !inlineInput}
+			<div class="h-[max(env(safe-area-inset-bottom),0px)]"></div>
+		{/if}
+	</section>
+</article>

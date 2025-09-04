@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 
-export type ModalType = 'apiKeys' | 'history' | 'sessionMenu' | null;
+export type ModalType = 'apiKeys' | 'history' | 'sessionMenu' | 'apiKeysRequired' | null;
 
 interface ModalState {
 	activeModal: ModalType;
@@ -32,3 +32,7 @@ export const modalStore = createModalStore();
 export const isApiKeysOpen = derived(modalStore, (s) => s.activeModal === 'apiKeys');
 export const isHistoryOpen = derived(modalStore, (s) => s.activeModal === 'history');
 export const isSessionMenuOpen = derived(modalStore, (s) => s.activeModal === 'sessionMenu');
+export const isApiKeysRequiredOpen = derived(
+	modalStore,
+	(s) => s.activeModal === 'apiKeysRequired'
+);

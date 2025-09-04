@@ -11,6 +11,8 @@
 		onRefine: (messageId: string) => void;
 		onRetry?: (messageId: string) => void;
 		class?: string;
+		emptyTitleOverride?: string;
+		emptySubtextOverride?: string;
 	}
 
 	let {
@@ -19,13 +21,16 @@
 		onUseCode,
 		onRefine,
 		onRetry,
-		class: className = ''
+		class: className = '',
+		emptyTitleOverride,
+		emptySubtextOverride
 	}: Props = $props();
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
 
-	// Virtualization state
+	// Virtualization state (temporarily disabled to avoid scroll loop on mobile branch)
 	let containerHeight = $state(0);
+	const virtualizationEnabled = false;
 	const estimatedItemHeight = 72; // px, heuristic average
 	const overscan = 6;
 	let startIndex = $state(0);
@@ -37,6 +42,11 @@
 
 	function computeWindow() {
 		const total = messages.length;
+		if (!virtualizationEnabled) {
+			startIndex = 0;
+			endIndex = total;
+			return;
+		}
 		if (!chatContainer) {
 			startIndex = 0;
 			endIndex = total;
@@ -51,9 +61,11 @@
 	}
 
 	function topSpacerHeight() {
+		if (!virtualizationEnabled) return 0;
 		return startIndex * estimatedItemHeight;
 	}
 	function bottomSpacerHeight() {
+		if (!virtualizationEnabled) return 0;
 		return Math.max(0, (messages.length - endIndex) * estimatedItemHeight);
 	}
 
@@ -101,32 +113,17 @@
 	aria-busy={isGenerating ? 'true' : 'false'}
 	aria-label={t('chat.conversationLabel')}
 >
-	{#if !isGenerating && !isAtBottom && messages.length > 0}
-		<button
-			onclick={jumpToLatest}
-			class="absolute left-1/2 -translate-x-1/2 bottom-2 z-10 rounded-full bg-primary text-primary-foreground text-xs px-3 py-2 shadow-lg hover:bg-primary/90 transition-all duration-200 cursor-pointer flex items-center gap-1"
-			aria-label={t('actions.jumpToLatest')}
-		>
-			<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M19 14l-7 7m0 0l-7-7m7 7V3"
-				/>
-			</svg>
-			{t('actions.jumpToLatest')}
-		</button>
-	{/if}
 	{#if browser && messages.length === 0}
-		<section
-			class="text-center text-muted-foreground mt-8"
-			role="status"
-			aria-label={t('chat.emptyState')}
-		>
-			<p class="text-sm">{t('chat.emptyState')}</p>
-			<p class="text-xs mt-2 opacity-70">{t('chat.emptySubtext')}</p>
-		</section>
+		<div class="min-h-[40vh] grid place-content-center">
+			<section
+				class="text-center text-muted-foreground"
+				role="status"
+				aria-label={t('chat.emptyState')}
+			>
+				<p class="text-sm">{emptyTitleOverride || t('chat.emptyState')}</p>
+				<p class="text-xs mt-2 opacity-70">{emptySubtextOverride || t('chat.emptySubtext')}</p>
+			</section>
+		</div>
 	{:else}
 		<div style={`height:${topSpacerHeight()}px`} aria-hidden="true"></div>
 		{#each messages.slice(startIndex, endIndex) as message (message.id)}

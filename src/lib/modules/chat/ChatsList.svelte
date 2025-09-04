@@ -5,7 +5,7 @@
 
 	type Mode = 'default' | 'expanded' | 'fullscreen';
 
-	let { collapsed, mode }: { collapsed: boolean; mode: Mode } = $props();
+	let { collapsed, mode, children }: { collapsed: boolean; mode: Mode; children?: any } = $props();
 
 	const dispatch = createEventDispatcher<{
 		openSessions: void;
@@ -106,9 +106,11 @@
 	<!-- Drawer content (hidden when collapsed) -->
 	{#if !collapsed && mode !== 'fullscreen'}
 		<div class={`overflow-y-auto ${mode === 'expanded' ? 'flex-1 min-h-0' : 'h-[25vh]'}`}>
-			<slot>
+			{#if children}
+				{@render children?.()}
+			{:else}
 				<div class="p-4 text-xs text-muted-foreground">Conversations will appear here</div>
-			</slot>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -143,9 +145,11 @@
 				</div>
 			</div>
 			<div class="flex-1 min-h-0 overflow-y-auto">
-				<slot name="fullscreen">
-					<slot />
-				</slot>
+				{#if children?.fullscreen}
+					{@render children.fullscreen()}
+				{:else}
+					{@render children?.()}
+				{/if}
 			</div>
 		</div>
 	</div>

@@ -76,7 +76,7 @@
 		// At least one key
 		const hasAnyKey = keys.openai || keys.anthropic || keys.gemini;
 		if (!hasAnyKey) {
-			errors.openai = 'Add at least one API key';
+			errors.openai = 'Please, add at least one API key.';
 			return;
 		}
 
@@ -102,6 +102,7 @@
 	{isOpen}
 	title="API Key Settings"
 	description="Your keys are encrypted and stored locally, never sent to any server."
+	showShortcutsHint={true}
 	{onClose}
 	onSave={saveKeys}
 >

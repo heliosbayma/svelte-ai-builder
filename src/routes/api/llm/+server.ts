@@ -22,8 +22,10 @@ interface LLMRequestBody {
 const ENDPOINTS = {
 	openai: 'https://api.openai.com/v1/chat/completions',
 	anthropic: 'https://api.anthropic.com/v1/messages',
-	gemini: (key: string, model: string) =>
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${key}`
+	gemini: (key: string, model: string, stream: boolean) =>
+		`https://generativelanguage.googleapis.com/v1beta/models/${model}:${
+			stream ? 'streamGenerateContent' : 'generateContent'
+		}?key=${key}`
 } as const;
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -41,6 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			case 'anthropic':
 				headers['x-api-key'] = apiKey;
 				headers['anthropic-version'] = '2023-06-01';
+				headers['anthropic-beta'] = 'max-tokens-extended-2024-07-31';
 				break;
 			case 'gemini':
 				// Gemini uses API key in URL
@@ -65,15 +68,21 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			case 'anthropic': {
 				const system = messages.find((m: LLMMessage) => m.role === 'system')?.content;
-				const userMessages = messages.filter((m: LLMMessage) => m.role !== 'system');
-				body = {
+				const converted = messages
+					.filter((m: LLMMessage) => m.role !== 'system')
+					.map((m: LLMMessage) => ({
+						role: m.role === 'assistant' ? 'assistant' : 'user',
+						content: [{ type: 'text', text: m.content }]
+					}));
+				const baseBody: Record<string, unknown> = {
 					model,
 					system,
-					messages: userMessages,
+					messages: converted,
 					temperature,
-					max_tokens: maxTokens,
-					stream
+					max_tokens: Math.min(maxTokens, 4096)
 				};
+				if (stream) (baseBody as any).stream = true;
+				body = baseBody;
 				break;
 			}
 
@@ -101,7 +110,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Get endpoint URL
 		const url =
 			provider === 'gemini'
-				? ENDPOINTS.gemini(apiKey, model)
+				? ENDPOINTS.gemini(apiKey, model, stream)
 				: ENDPOINTS[provider as keyof typeof ENDPOINTS];
 
 		// Make request to LLM API

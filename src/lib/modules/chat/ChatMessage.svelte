@@ -20,6 +20,7 @@
 
 	let { message, onUseCode, onRefine }: Props = $props();
 	let expanded = $state(false);
+	let copiedUser = $state(false);
 	const dispatch = createEventDispatcher<{ retry: { messageId: string } }>();
 
 	function handleCopy() {
@@ -40,6 +41,8 @@
 
 	function handleCopyUserMessage() {
 		navigator.clipboard.writeText(message.content);
+		copiedUser = true;
+		setTimeout(() => (copiedUser = false), 1200);
 	}
 
 	// Action button configuration - using derived to react to expanded state
@@ -142,9 +145,9 @@
 		<div class="flex justify-end">
 			<div class="max-w-[80%] group relative">
 				<div
-					class="p-3 rounded-lg bg-slate-700 dark:bg-slate-800 text-slate-400 shadow-sm break-words overflow-hidden"
+					class="p-3 rounded-lg bg-slate-700 dark:bg-slate-800 text-slate-400 shadow-sm break-words break-all overflow-hidden"
 				>
-					<div class="whitespace-pre-wrap text-sm break-words">{message.content}</div>
+					<div class="whitespace-pre-wrap text-sm break-words break-all">{message.content}</div>
 				</div>
 				<!-- Copy button for user message -->
 				<button
@@ -155,6 +158,15 @@
 				>
 					<CopyIcon class="w-3 h-3 text-slate-200" />
 				</button>
+				{#if copiedUser}
+					<div
+						class="absolute -bottom-7 right-2 text-[10px] bg-slate-700 dark:bg-slate-800 text-slate-200 px-2 py-0.5 rounded shadow-sm"
+						role="status"
+						aria-live="polite"
+					>
+						Copied
+					</div>
+				{/if}
 			</div>
 		</div>
 	{:else}
@@ -167,7 +179,7 @@
 					aria-live="polite"
 				>
 					<h4 class="text-destructive text-sm font-medium mb-2">Error</h4>
-					<p class="text-destructive text-sm">{message.error}</p>
+					<p class="text-destructive text-sm break-words break-all">{message.error}</p>
 					<div class="mt-2">
 						<button
 							class="text-xs underline text-destructive hover:opacity-80"
@@ -216,7 +228,7 @@
 							</div>
 						</div>
 					{:else}
-						<div class="p-3 rounded-lg bg-muted/30 border border-muted/50">
+						<div class="p-3 rounded-lg bg-muted/30 border border-muted/50 break-words">
 							<div class="flex items-center gap-2 text-sm text-muted-foreground">
 								<CodeIcon class="w-4 h-4" />
 								<span class="font-medium">Code Generated</span>
@@ -250,7 +262,7 @@
 						</div>
 					</header>
 					<div
-						class="whitespace-pre-wrap text-sm leading-relaxed"
+						class="whitespace-pre-wrap text-sm leading-relaxed break-words break-all"
 						role="region"
 						aria-label="AI response"
 					>

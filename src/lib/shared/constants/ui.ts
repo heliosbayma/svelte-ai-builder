@@ -44,7 +44,7 @@ export const UI_CONSTANTS = {
 export const ERROR_MESSAGES = {
 	API_KEY_REQUIRED: 'Please configure your API keys in Settings before starting a conversation.',
 	API_KEY_INVALID: 'Invalid API key format',
-	API_KEY_MINIMUM: 'Add at least one API key',
+	API_KEY_MINIMUM: 'Please, add at least one API key.',
 	GENERATION_FAILED: 'Generation failed. Please try again.',
 	PLAN_FAILED: 'Plan failed. Please try again or pick another model.',
 	BUILD_FAILED: 'Build failed. Please try again or pick another model.',

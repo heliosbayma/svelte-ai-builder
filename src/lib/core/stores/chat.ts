@@ -187,9 +187,30 @@ function createChatStore() {
 			set(initialState);
 			persist.clear();
 		},
+		
+		/** Clear only messages, keep other state */
+		clearMessages: () => {
+			update((state) => {
+				const next = { ...state, messages: [] };
+				persist.save(next);
+				return next;
+			});
+		},
 
 		/** Replace messages when switching sessions. */
 		replaceMessages: (messages: ChatMessage[]) => {
+			const next: ChatState = {
+				messages: messages.slice(0, 1000),
+				isGenerating: false,
+				currentProvider: null,
+				currentRequestId: null
+			};
+			set(next);
+			persist.save(next);
+		},
+		
+		/** Alias for replaceMessages */
+		setMessages: (messages: ChatMessage[]) => {
 			const next: ChatState = {
 				messages: messages.slice(0, 1000),
 				isGenerating: false,

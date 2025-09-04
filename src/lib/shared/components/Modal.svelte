@@ -8,10 +8,19 @@
 		description?: string;
 		onClose: () => void;
 		onSave?: () => void;
+		showShortcutsHint?: boolean;
 		children?: any;
 	}
 
-	let { isOpen, title, description, onClose, onSave, children }: Props = $props();
+	let {
+		isOpen,
+		title,
+		description,
+		onClose,
+		onSave,
+		children,
+		showShortcutsHint = false
+	}: Props = $props();
 	let modalRef = $state<HTMLDivElement>();
 	let lastActive: HTMLElement | null = null;
 
@@ -95,7 +104,9 @@
 				{#if description}
 					<CardDescription>
 						{description}
-						<span class="text-xs block mt-1 opacity-70">Press ⌘+Enter to save, Esc to close</span>
+						{#if showShortcutsHint}
+							<span class="text-xs block mt-1 opacity-70">Press ⌘+Enter to save, Esc to close</span>
+						{/if}
 					</CardDescription>
 				{/if}
 			</CardHeader>

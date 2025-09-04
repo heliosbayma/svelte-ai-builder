@@ -174,12 +174,24 @@
 	<section class="flex-1 min-h-0 overflow-hidden">
 		{#if $showDiff && $previousCode}
 			<div class="flex items-center justify-between mb-2 gap-2 text-xs">
-				<label class="flex items-center gap-1 cursor-pointer"
-					><input type="checkbox" bind:checked={showOnlyChanges} /> Only changes</label
-				>
-				<label class="hidden sm:flex items-center gap-1 cursor-pointer"
-					><input type="checkbox" bind:checked={sideBySide} /> Side‑by‑side</label
-				>
+				<div class="flex items-center gap-3">
+					<label class="flex items-center gap-2 cursor-pointer">
+						<input
+							class="h-3.5 w-3.5 rounded border-input text-primary focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+							type="checkbox"
+							bind:checked={showOnlyChanges}
+						/>
+						<span class="text-muted-foreground">Only changes</span>
+					</label>
+					<label class="hidden sm:flex items-center gap-2 cursor-pointer">
+						<input
+							class="h-3.5 w-3.5 rounded border-input text-primary focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+							type="checkbox"
+							bind:checked={sideBySide}
+						/>
+						<span class="text-muted-foreground">Side‑by‑side</span>
+					</label>
+				</div>
 			</div>
 
 			{#if sideBySide}

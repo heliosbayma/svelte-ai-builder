@@ -26,6 +26,14 @@
 	let hasFatalMountError = $state(false);
 	let targetOrigin: string | null = null;
 	const sandboxAttrs = 'allow-scripts allow-same-origin';
+	let lastWelcomeReloadAt = 0;
+
+	function isWelcomeMessage(msg: string | undefined): boolean {
+		if (!msg) return false;
+		const short = t('loading.welcome');
+		const long = t('loading.welcomeLong');
+		return msg === long || msg.includes(short);
+	}
 
 	function postTheme() {
 		const isDark = document.documentElement.classList.contains('dark');
@@ -94,7 +102,7 @@
 				postLoadingMessage(t('loading.default'));
 			}
 			if (loadingMessage && !isMounted) {
-				if (loadingMessage.includes(t('loading.welcome'))) {
+				if (isWelcomeMessage(loadingMessage)) {
 					postWelcomeMessage(loadingMessage);
 				} else {
 					postLoadingMessage(loadingMessage);
@@ -141,23 +149,46 @@
 	}
 
 	function postLoadingMessage(message: string) {
-		if (isMounted) return;
 		postToIframe({ type: 'loading', message });
 	}
 
 	function postWelcomeMessage(message: string) {
-		if (isMounted) return;
 		postToIframe({ type: 'welcome', message });
 	}
 
 	$effect(() => {
-		const canShowMessage = loadingMessage && iframeRef?.contentWindow && iframeReady && !isMounted;
-		if (!canShowMessage) return;
+		if (!loadingMessage) return;
+		// Force reset of mount state and show loading immediately
+		isMounted = false;
+		hasFatalMountError = false;
+		lastCompiledJs = '';
+		if (mountAttemptId) clearTimeout(mountAttemptId);
+		mountAttemptId = null;
+		if (iframeRef?.contentWindow && iframeReady) {
+			if (isWelcomeMessage(loadingMessage)) {
+				postWelcomeMessage(loadingMessage);
+			} else {
+				postLoadingMessage(loadingMessage);
+			}
+		}
+	});
 
-		if (loadingMessage.includes(t('loading.welcome'))) {
-			postWelcomeMessage(loadingMessage);
-		} else {
-			postLoadingMessage(loadingMessage);
+	// If a welcome message arrives while something was mounted, hard-reload the iframe document once.
+	$effect(() => {
+		if (!loadingMessage) return;
+		const wantsWelcome = isWelcomeMessage(loadingMessage);
+		if (!wantsWelcome) return;
+		if (isMounted && iframeRef) {
+			const now = Date.now();
+			if (now - lastWelcomeReloadAt > 300) {
+				lastWelcomeReloadAt = now;
+				try {
+					iframeReady = false;
+					isMounted = false;
+					// Force a navigation to ensure prior app DOM is gone
+					iframeRef.src = '/preview#' + now;
+				} catch {}
+			}
 		}
 	});
 
@@ -171,7 +202,7 @@
 			if (mountAttemptId) clearTimeout(mountAttemptId);
 			mountAttemptId = null;
 			if (loadingMessage) {
-				if (loadingMessage.includes(t('loading.welcome'))) {
+				if (isWelcomeMessage(loadingMessage)) {
 					postWelcomeMessage(loadingMessage);
 				} else {
 					postLoadingMessage(loadingMessage);
@@ -187,8 +218,8 @@
 </script>
 
 <section class="h-full flex flex-col {className}">
-	<section class="flex-1" aria-busy={!isMounted ? 'true' : 'false'} aria-live="polite">
-		<div class="w-full h-full rounded-lg border overflow-hidden">
+	<section class="flex-1 relative" aria-busy={!isMounted ? 'true' : 'false'} aria-live="polite">
+		<div class="w-full h-full rounded-lg border overflow-hidden relative">
 			<iframe
 				bind:this={iframeRef}
 				class="w-full h-full bg-background"
@@ -219,6 +250,21 @@
 					});
 				}}
 			></iframe>
+
+			{#if loadingMessage && !isWelcomeMessage(loadingMessage) && (!compiledJs || !isMounted)}
+				<div
+					class="absolute inset-0 grid place-content-center bg-background/40 backdrop-blur-[1px]"
+				>
+					<div class="text-center px-4">
+						<div
+							class="mx-auto mb-3 w-6 h-6 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin"
+						></div>
+						<div class="text-sm text-muted-foreground">
+							{loadingMessage}
+						</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</section>
 </section>
