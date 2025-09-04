@@ -4,7 +4,7 @@
 	import ApiKeysRequiredModal from '$lib/modules/settings/ApiKeysRequiredModal.svelte';
 	import HistoryPanel from './HistoryPanel.svelte';
 	import SessionMenu from './SessionMenu.svelte';
-	import { Undo2, Redo2, History, Code, MessageSquare } from '@lucide/svelte';
+	import { Undo2, Redo2, History, Code, MessageSquare, Menu, X } from '@lucide/svelte';
 	import { Plus } from '@lucide/svelte';
 	import { chatSessionsStore } from '$lib/core/stores/chatSessions';
 	import { chatStore } from '$lib/core/stores/chat';
@@ -47,6 +47,7 @@
 	}: Props = $props();
 
 	// Modal state is now managed globally via modalStore
+	let mobileMenuOpen = $state(false);
 
 	function openApiKeySettings() {
 		modalStore.open('apiKeys');
@@ -87,6 +88,31 @@
 		historyStore.setCurrentSession(id);
 		onNewChat?.();
 	}
+
+	function toggleMobileMenu() {
+		mobileMenuOpen = !mobileMenuOpen;
+	}
+
+	// Close mobile menu when clicking outside
+	$effect(() => {
+		if (mobileMenuOpen) {
+			function handleClickOutside(event: MouseEvent) {
+				const target = event.target as Element;
+				const nav = document.querySelector('nav[data-mobile-menu]');
+				if (nav && !nav.contains(target)) {
+					mobileMenuOpen = false;
+				}
+			}
+
+			setTimeout(() => {
+				document.addEventListener('mousedown', handleClickOutside);
+			}, 0);
+
+			return () => {
+				document.removeEventListener('mousedown', handleClickOutside);
+			};
+		}
+	});
 </script>
 
 <header class="flex items-center justify-between h-11 sm:h-12 px-3 sm:px-4">
@@ -131,9 +157,10 @@
 			{/if}
 		</div>
 	</section>
-	<nav class="flex items-center gap-2.5">
+	<nav class="flex items-center gap-1 sm:gap-2.5 relative" data-mobile-menu>
 		{#if !isWelcome}
-			<div class="flex items-center gap-1">
+			<!-- Desktop: Show all buttons normally -->
+			<div class="hidden sm:flex items-center gap-1">
 				<Button
 					variant="ghost"
 					size="sm"
@@ -156,7 +183,7 @@
 				</Button>
 			</div>
 
-			<div class="w-px h-5 bg-border"></div>
+			<div class="w-px h-5 bg-border hidden sm:block"></div>
 
 			<Button
 				variant="ghost"
@@ -164,6 +191,7 @@
 				onclick={toggleHistory}
 				aria-label={t('a11y.openHistory')}
 				title={t('header.historyTooltip')}
+				class="hidden sm:inline-flex"
 			>
 				<History class="size-4" />
 			</Button>
@@ -174,9 +202,76 @@
 				onclick={onToggleCode}
 				aria-label={showCode ? t('a11y.hideCode') : t('a11y.showCode')}
 				title={showCode ? t('header.hideCodeTooltip') : t('header.codeTooltip')}
+				class="hidden sm:inline-flex"
 			>
 				<Code class="size-4" />
 			</Button>
+
+			<!-- Mobile: Burger menu -->
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={toggleMobileMenu}
+				aria-label="Menu"
+				title="Menu"
+				class="sm:hidden"
+			>
+				{#if mobileMenuOpen}
+					<X class="size-4" />
+				{:else}
+					<Menu class="size-4" />
+				{/if}
+			</Button>
+
+			<!-- Mobile dropdown menu -->
+			{#if mobileMenuOpen}
+				<div class="absolute top-full right-0 mt-1 w-48 bg-card border rounded-md shadow-lg z-50 sm:hidden">
+					<div class="py-1">
+						<button
+							onclick={() => {
+								onUndo?.();
+								mobileMenuOpen = false;
+							}}
+							disabled={!canUndo}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							<Undo2 class="size-4" />
+							{t('header.undoTooltip')}
+						</button>
+						<button
+							onclick={() => {
+								onRedo?.();
+								mobileMenuOpen = false;
+							}}
+							disabled={!canRedo}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							<Redo2 class="size-4" />
+							{t('header.redoTooltip')}
+						</button>
+						<button
+							onclick={() => {
+								toggleHistory();
+								mobileMenuOpen = false;
+							}}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+						>
+							<History class="size-4" />
+							{t('header.historyTooltip')}
+						</button>
+						<button
+							onclick={() => {
+								onToggleCode();
+								mobileMenuOpen = false;
+							}}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+						>
+							<Code class="size-4" />
+							{showCode ? t('header.hideCodeTooltip') : t('header.codeTooltip')}
+						</button>
+					</div>
+				</div>
+			{/if}
 		{/if}
 
 		<SessionMenu

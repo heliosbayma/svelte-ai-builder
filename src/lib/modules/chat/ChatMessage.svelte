@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import type { ChatMessage } from '$lib/core/stores/chat';
 	import { getCodePreview, formatProvider, formatTime } from '$lib/shared/utils/codePreview';
 	import {
@@ -11,6 +12,9 @@
 	import { safeSessionStorage } from '$lib/shared/utils/storage';
 	import { t } from '$lib/shared/i18n';
 	import { createEventDispatcher } from 'svelte';
+	import Prism from 'prismjs';
+	import 'prism-svelte';
+	import 'prismjs/themes/prism-tomorrow.css';
 
 	interface Props {
 		message: ChatMessage;
@@ -102,34 +106,14 @@
 		}
 	}
 
-	// Simple syntax highlighting for Svelte/JS code
+	// Proper syntax highlighting using Prism.js (same as CodePanel)
 	function highlightCode(code: string): string {
-		return (
-			code
-				// HTML/Svelte tags
-				.replace(
-					/(&lt;\/?)([a-zA-Z][a-zA-Z0-9-]*)(.*?)(&gt;)/g,
-					'$1<span class="text-blue-400">$2</span>$3$4'
-				)
-				// Attributes
-				.replace(/(\s)([a-zA-Z-]+)(=)/g, '$1<span class="text-green-400">$2</span>$3')
-				// Strings
-				.replace(/("[^"]*")/g, '<span class="text-yellow-300">$1</span>')
-				.replace(/('[^']*')/g, '<span class="text-yellow-300">$1</span>')
-				// Comments
-				.replace(/(\/\*.*?\*\/)/gs, '<span class="text-gray-500 italic">$1</span>')
-				.replace(/(\/\/.*$)/gm, '<span class="text-gray-500 italic">$1</span>')
-				// Keywords
-				.replace(
-					/\b(function|const|let|var|if|else|for|while|return|import|export|interface|type|class)\b/g,
-					'<span class="text-purple-400">$1</span>'
-				)
-				// Svelte directives
-				.replace(
-					/(\$:|#if|#each|#await|\/if|\/each|\/await|\$props|\$state|\$effect)/g,
-					'<span class="text-pink-400">$1</span>'
-				)
-		);
+		if (!browser) return code;
+		try {
+			return (Prism as any).highlight(code, (Prism as any).languages.svelte, 'svelte');
+		} catch {
+			return code;
+		}
 	}
 </script>
 
@@ -216,16 +200,12 @@
 					{#if expanded}
 						<div
 							id={`code-${message.id}`}
-							class="font-mono text-xs whitespace-pre-wrap break-words max-h-96 overflow-auto rounded-lg bg-gray-900 border p-4 relative"
+							class="font-mono text-xs whitespace-pre-wrap break-words max-h-96 overflow-auto rounded-lg border p-4 relative"
 							aria-label="Generated Svelte component code"
 							role="code"
 						>
-							<!-- Code with syntax highlighting -->
-							<div class="text-gray-100">
-								{@html highlightCode(
-									message.generatedCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-								)}
-							</div>
+							<!-- Code with Prism.js syntax highlighting -->
+							<pre class="inline-block text-xs max-h-full px-0 py-0" style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;"><code class="language-svelte">{@html highlightCode(message.generatedCode)}</code></pre>
 						</div>
 					{:else}
 						<div class="p-3 rounded-lg bg-muted/30 border border-muted/50 break-words">
@@ -328,3 +308,15 @@
 		</div>
 	{/if}
 </article>
+
+<style>
+	/* Neutralize Prism backgrounds so our theme backgrounds work properly */
+	:global(pre[class*='language-']) {
+		background: transparent !important;
+		margin: 0 !important;
+		border-radius: 0 !important;
+	}
+	:global(code[class*='language-']) {
+		background: transparent !important;
+	}
+</style>

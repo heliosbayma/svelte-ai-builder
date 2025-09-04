@@ -127,8 +127,8 @@
 			/>
 
 			<!-- Bottom controls: left checkbox; right model select + icon-only send -->
-			<div class="absolute left-3 right-3 bottom-3 flex items-center justify-between gap-2">
-				<div class="text-xs text-muted-foreground">
+			<div class="absolute left-3 right-3 bottom-3 flex items-center justify-end sm:justify-between gap-2">
+				<div class="text-xs text-muted-foreground hidden sm:block">
 					<label class="flex items-center gap-1.5 cursor-pointer">
 						<input
 							type="checkbox"
@@ -152,31 +152,31 @@
 						</button>
 					{/if}
 					<select
-						class="h-8 px-2 text-[10px] rounded text-muted-foreground border border-border/40 bg-card/30 hover:bg-card/50 outline-none focus:outline-none focus:ring-0 cursor-pointer"
+						class="select-mobile h-8 px-2 text-[10px] rounded text-foreground border border-border/40 bg-background outline-none focus:outline-none focus:ring-0 cursor-pointer"
 						value={modelInput}
 						onchange={handleModelChange}
 						disabled={isGenerating}
 						aria-label={t('chat.modelOverride')}
 						title={t('chat.modelOverride')}
 					>
-						<option value="">{t('chat.autoModel')}</option>
-						<optgroup label={labelForProvider('openai')}>
-							<option value="gpt-4o">{t('models.openai.gpt-4o')}</option>
-							<option value="gpt-4o-mini">{t('models.openai.gpt-4o-mini')}</option>
+						<option value="" class="bg-background text-foreground">{t('chat.autoModel')}</option>
+						<optgroup label={labelForProvider('openai')} class="bg-background">
+							<option value="gpt-4o" class="bg-background text-foreground">{t('models.openai.gpt-4o')}</option>
+							<option value="gpt-4o-mini" class="bg-background text-foreground">{t('models.openai.gpt-4o-mini')}</option>
 						</optgroup>
-						<optgroup label={labelForProvider('anthropic')}>
-							<option value="claude-3-5-sonnet-20241022"
+						<optgroup label={labelForProvider('anthropic')} class="bg-background">
+							<option value="claude-3-5-sonnet-20241022" class="bg-background text-foreground"
 								>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
 							>
-							<option value="claude-3-5-haiku-20241022"
+							<option value="claude-3-5-haiku-20241022" class="bg-background text-foreground"
 								>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
 							>
 						</optgroup>
-						<optgroup label={labelForProvider('gemini')}>
-							<option value="gemini-1.5-pro-latest"
+						<optgroup label={labelForProvider('gemini')} class="bg-background">
+							<option value="gemini-1.5-pro-latest" class="bg-background text-foreground"
 								>{t('models.gemini.gemini-1_5-pro-latest')}</option
 							>
-							<option value="gemini-1.5-flash-latest"
+							<option value="gemini-1.5-flash-latest" class="bg-background text-foreground"
 								>{t('models.gemini.gemini-1_5-flash-latest')}</option
 							>
 						</optgroup>
@@ -211,3 +211,64 @@
 		</div>
 	</div>
 </form>
+
+<style>
+	/* Force mobile select dropdown to use proper theme colors */
+	.select-mobile {
+		-webkit-appearance: none;
+		appearance: none;
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+	}
+
+	.select-mobile option {
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+	}
+
+	.select-mobile optgroup {
+		background-color: hsl(var(--background));
+		color: hsl(var(--muted-foreground));
+	}
+
+	/* iOS specific fixes */
+	@supports (-webkit-touch-callout: none) {
+		.select-mobile {
+			background-color: hsl(var(--background)) !important;
+			color: hsl(var(--foreground)) !important;
+		}
+		
+		.select-mobile option {
+			background-color: hsl(var(--background)) !important;
+			color: hsl(var(--foreground)) !important;
+		}
+	}
+
+	/* Dark mode overrides */
+	:global(.dark) .select-mobile {
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+	}
+
+	:global(.dark) .select-mobile option,
+	:global(.dark) .select-mobile optgroup {
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+	}
+
+	/* Better text wrapping to prevent single word orphans */
+	:global([data-chat-textarea]) {
+		word-wrap: break-word;
+		overflow-wrap: break-word;
+		hyphens: auto;
+		line-break: auto;
+		/* Prevent orphan words (single words on new lines) */
+		orphans: 2;
+		widows: 2;
+		/* Better word spacing */
+		word-spacing: normal;
+		/* Allow breaking long words but prefer breaking at word boundaries */
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+</style>

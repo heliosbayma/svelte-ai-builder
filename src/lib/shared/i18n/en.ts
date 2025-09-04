@@ -35,7 +35,7 @@ export const en = {
 		generating: 'Generating...',
 		buildFromPlan: 'Build from plan',
 		autoModel: 'Auto model',
-		emptyState: 'Start a conversation to generate Svelte applications',
+		emptyState: 'Start a conversation to generate Svelte applications.',
 		emptySubtext:
 			'Try: "Create an AI creative web app: immersive hero, subject-based photo gallery (fetch images by topics like robots, circuits, neon), a video spotlight, a prompt box that adds images to the gallery, and a Join Beta form. Premium dark theme, glass morphism, smooth hover/focus states, all client‑only."',
 		newChatTitle: 'New chat — what should we build?',
@@ -53,24 +53,24 @@ export const en = {
 	settings: {
 		title: 'API Key Settings',
 		description: 'Your keys are encrypted and stored locally, never sent to any server.',
-		keyboardHint: 'Press ⌘+Enter to save, Esc to close',
+		keyboardHint: 'Press ⌘+Enter to save, Esc to close.',
 		storageMode: 'Storage mode',
 		storageLocal: 'Local (persists across tabs)',
 		storageSession: 'Session-only',
-		apiKeyRequired: 'API key is required'
+		apiKeyRequired: 'API key is required.'
 	},
 
 	// Validation messages
 	validation: {
-		promptRequired: 'Please enter a prompt',
+		promptRequired: 'Please enter a prompt.',
 		promptTooShort: 'Prompt too short (minimum {min} characters)',
 		promptTooLong: 'Prompt too long (maximum {max} characters)',
 		apiKeyInvalidOpenai: 'OpenAI API key should start with "sk-" and be at least {min} characters',
 		apiKeyInvalidAnthropic:
 			'Anthropic API key should start with "sk-ant-" and be at least {min} characters',
 		apiKeyInvalidGemini: 'Gemini API key should be at least {min} characters',
-		apiKeyMinRequired: 'Please, add at least one API key.',
-		invalidApiKeyFormat: 'Invalid API key format'
+		apiKeyMinRequired: 'Please, add at least one key.',
+		invalidApiKeyFormat: 'Invalid API key format.'
 	},
 
 	// Error messages
@@ -83,8 +83,8 @@ export const en = {
 		buildFailed: 'Build failed. Please try again or pick another model.',
 		generationFailed: 'Generation failed. Please try again.',
 		networkError: 'Network error. Please check your connection.',
-		unknownError: 'Unknown error occurred',
-		mountError: 'Failed to mount component in preview'
+		unknownError: 'Unknown error occurred.',
+		mountError: 'Failed to mount component in preview.'
 	},
 
 	// Loading messages

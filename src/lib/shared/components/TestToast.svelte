@@ -6,12 +6,12 @@
 		warning('This is a warning message', { title: 'Warning' });
 		info('Here is some helpful information', { 
 			title: 'Info', 
-			action: { label: 'Learn More', handler: () => console.log('Learn more clicked') }
+			action: { label: 'Learn More', handler: () => {} }
 		});
 		error('Something went wrong', {
 			title: 'Error',
 			duration: 0,
-			action: { label: 'Retry', handler: () => console.log('Retry clicked') }
+			action: { label: 'Retry', handler: () => {} }
 		});
 	}
 </script>

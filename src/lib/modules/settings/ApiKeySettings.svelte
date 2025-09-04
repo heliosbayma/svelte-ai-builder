@@ -76,7 +76,7 @@
 		// At least one key
 		const hasAnyKey = keys.openai || keys.anthropic || keys.gemini;
 		if (!hasAnyKey) {
-			errors.openai = 'Please, add at least one API key.';
+			errors.openai = 'Please, add at least one key.';
 			return;
 		}
 

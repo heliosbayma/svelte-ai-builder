@@ -169,7 +169,7 @@ export class SvelteCompiler {
 				title: 'Code Simplified',
 				action: {
 					label: 'View Error',
-					handler: () => console.log('Compilation error:', error)
+					handler: () => {}
 				}
 			});
 
@@ -204,10 +204,7 @@ export class SvelteCompiler {
 						duration: 0, // Don't auto-dismiss
 						action: {
 							label: 'View Details',
-							handler: () => {
-								console.log('Original error:', error);
-								console.log('Fallback error:', fallbackError);
-							}
+							handler: () => {}
 						}
 					}
 				);

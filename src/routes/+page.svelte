@@ -161,7 +161,6 @@
 
 	// Simple URL handling on mount only to avoid circular effects
 	function handleUrlNavigation() {
-		console.log('handleUrlNavigation called with URL:', $page.url.href);
 		const urlChatId = $page.url.searchParams.get('chat');
 
 		if (!urlChatId && $page.url.pathname === '/') {
@@ -173,29 +172,18 @@
 		} else if (urlChatId) {
 			// Chat ID in URL, load that session
 			const sessions = get(chatSessionsStore);
-			console.log('Checking session existence:', {
-				urlChatId,
-				availableSessions: sessions.sessions.map(s => s.id),
-				totalSessions: sessions.sessions.length
-			});
 			
 			const sessionExists = (sessions.sessions as Array<{ id: string }>).some(
 				(s) => s.id === urlChatId
 			);
 			
 			if (sessionExists) {
-				console.log('Session found, loading:', urlChatId);
 				welcomeMode = false;
 				chatSessionsStore.setCurrent(urlChatId);
 				const messages = sessions.messagesById[urlChatId] || [];
 				chatStore.setMessages(messages);
 			} else {
 				// Invalid chat ID, redirect to welcome only if not already at root
-				console.log('Invalid chat ID, redirecting to welcome:', {
-					urlChatId,
-					currentPath: $page.url.pathname,
-					searchParams: $page.url.searchParams.toString()
-				});
 				if ($page.url.pathname !== '/' || $page.url.searchParams.toString()) {
 					goto('/', { replaceState: true });
 				}
@@ -240,7 +228,7 @@
 
 	// Mobile chat visibility / sizing state
 	let chatHidden = $state(false);
-	let chatMode = $state<'default' | 'expanded' | 'fullscreen'>('default');
+	let chatMode = $state<'default' | 'expanded' | 'fullscreen'>('expanded');
 	let chatCollapsed = $state(false); // Changed to false to show chat by default
 
 	function setChatDefault() {
@@ -350,7 +338,6 @@
 					<ChatInterface
 						onCodeGenerated={handleCodeGenerated}
 						onStartGenerating={() => {
-							console.log('Starting generation from welcome mode');
 							welcomeMode = false;
 							// Small delay to ensure welcome mode change is processed
 							setTimeout(() => {
@@ -367,15 +354,25 @@
 			<div
 				class={`flex-1 min-h-0 flex flex-col relative transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
 			>
-				<section class="absolute inset-0 p-4 pt-0 overflow-y-auto pb-64">
-					<PreviewPanel
-						class="h-full"
-						previewHtml={$previewHtml}
-						compiledJs={$compiledJs}
-						compiledCss={$compiledCss}
-						loadingMessage={$loadingMessage}
-					/>
-				</section>
+				{#if $showCode}
+					<!-- Mobile code view -->
+					<section class={`absolute inset-0 p-4 pt-0 overflow-y-auto ${chatHidden ? 'pb-4' : 'pb-64'}`}>
+						<div class="h-full bg-background rounded-lg border">
+							<CodePanel {layout} {compilation} onCopy={copyCode} />
+						</div>
+					</section>
+				{:else}
+					<!-- Mobile preview -->
+					<section class={`absolute inset-0 p-4 pt-0 overflow-y-auto ${chatHidden ? 'pb-4' : 'pb-64'}`}>
+						<PreviewPanel
+							class="h-full"
+							previewHtml={$previewHtml}
+							compiledJs={$compiledJs}
+							compiledCss={$compiledCss}
+							loadingMessage={$loadingMessage}
+						/>
+					</section>
+				{/if}
 
 				{#if !chatHidden}
 					<div class="fixed bottom-0 left-0 right-0 z-30">
@@ -387,20 +384,17 @@
 							on:expand={expandChatPanel}
 							on:fullscreen={setChatFullscreen}
 							on:hide={hideChat}
-						/>
+						>
+							<ChatInterface
+								onCodeGenerated={handleCodeGenerated}
+								onStartGenerating={() => {
+									welcomeMode = false;
+									compilation.setLoading(t('loading.default'));
+								}}
+								showMessages={true}
+							/>
+						</ChatsList>
 
-						{#if chatMode !== 'fullscreen'}
-							<section class="bg-card border-t">
-								<ChatInterface
-									onCodeGenerated={handleCodeGenerated}
-									onStartGenerating={() => {
-										welcomeMode = false;
-										compilation.setLoading(t('loading.default'));
-									}}
-									showMessages={false}
-								/>
-							</section>
-						{/if}
 					</div>
 				{/if}
 

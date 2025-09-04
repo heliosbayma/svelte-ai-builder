@@ -39,47 +39,28 @@
 <!-- Inline drawer instance (bar + optional content) -->
 <div
 	style="--chat-offset: calc(var(--chat-input-h,88px) + 4px);"
-	class={`border-t bg-card pb-[var(--chat-offset)] sm:pb-0 ${
-		!collapsed && mode === 'expanded' ? 'h-[50vh] flex flex-col' : 'h-auto'
+	class={`border-t bg-card sm:pb-[var(--chat-offset)] ${
+		mode === 'expanded' ? 'h-[60vh] flex flex-col' : 'h-[45vh] flex flex-col sm:h-auto sm:pb-0'
 	}`}
 >
 	<!-- Single sticky bar that stays above input using --chat-offset -->
 	<div
-		class="flex items-center justify-between px-2 py-1 bg-card/90 flex-shrink-0 sticky bottom-[var(--chat-offset)] sm:static sm:bottom-auto z-50"
+		class="flex items-center justify-between px-3 py-2 bg-card/90 flex-shrink-0 sm:sticky sm:bottom-[var(--chat-offset)] sm:z-50"
 	>
 		<Button
 			variant="ghost"
 			size="sm"
 			onclick={handleOpenSessions}
-			aria-label="Conversations"
-			title="Conversations"
+			aria-label="Messages"
+			title="Messages"
 			type="button"
 		>
 			<MessageSquare class="size-4" />
-			<span class="ml-1 text-xs">Conversations</span>
+			<span class="ml-1 text-xs">Messages</span>
 		</Button>
 
 		<div class="flex items-center gap-1">
-			<Button
-				variant="ghost"
-				size="sm"
-				onclick={handleCollapse}
-				aria-label="Collapse"
-				title="Collapse"
-				type="button"
-			>
-				<ChevronDown class="size-4" />
-			</Button>
-			<Button
-				variant="ghost"
-				size="sm"
-				onclick={handleExpand}
-				aria-label="Expand"
-				title="Expand"
-				type="button"
-			>
-				<ChevronUp class="size-4" />
-			</Button>
+			<!-- Hide fullscreen on mobile to simplify -->
 			<Button
 				variant="ghost"
 				size="sm"
@@ -87,6 +68,7 @@
 				aria-label="Fullscreen"
 				title="Fullscreen"
 				type="button"
+				class="hidden sm:inline-flex"
 			>
 				<Maximize2 class="size-4" />
 			</Button>
@@ -103,24 +85,26 @@
 		</div>
 	</div>
 
-	<!-- Drawer content (hidden when collapsed) -->
-	{#if !collapsed && mode !== 'fullscreen'}
-		<div class={`overflow-y-auto ${mode === 'expanded' ? 'flex-1 min-h-0' : 'h-[25vh]'}`}>
+	<!-- Drawer content (always shown on mobile since no collapse/expand buttons) -->
+	{#if mode !== 'fullscreen'}
+		<div
+			class={`overflow-y-auto ${mode === 'expanded' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 sm:h-[25vh]'}`}
+		>
 			{#if children}
 				{@render children?.()}
 			{:else}
-				<div class="p-4 text-xs text-muted-foreground">Conversations will appear here</div>
+				<div class="p-3 text-xs text-muted-foreground">Messages will appear here</div>
 			{/if}
 		</div>
 	{/if}
 </div>
 
-<!-- Fullscreen overlay for conversations -->
+<!-- Fullscreen overlay for Messages -->
 {#if mode === 'fullscreen'}
 	<div class="fixed inset-0 z-50 bg-background sm:hidden">
 		<div class="h-full flex flex-col">
 			<div class="p-2 border-b flex items-center justify-between">
-				<span class="text-xs text-muted-foreground">Conversations</span>
+				<span class="text-xs text-muted-foreground">Messages</span>
 				<div class="flex items-center gap-1">
 					<Button
 						variant="ghost"

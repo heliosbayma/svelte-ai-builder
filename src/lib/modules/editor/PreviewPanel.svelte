@@ -126,7 +126,7 @@
 				title: 'Preview Error',
 				action: {
 					label: 'View Details',
-					handler: () => console.log('Mount error:', event.data.error)
+					handler: () => {}
 				}
 			});
 		}

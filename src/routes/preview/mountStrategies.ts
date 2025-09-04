@@ -51,7 +51,6 @@ export class MountManager {
 							: typeof result?.$destroy === 'function'
 								? () => result.$destroy()
 								: undefined;
-				console.log(`${strategy.name} succeeded`);
 				return { success: true, cleanup };
 			} catch (error) {
 				console.error(`${strategy.name} failed:`, error);
