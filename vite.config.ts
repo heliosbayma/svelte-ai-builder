@@ -5,8 +5,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
 	server: { host: '0.0.0.0' },
 	plugins: [tailwindcss(), sveltekit()],
-	ssr: {
-		noExternal: process.env.NODE_ENV === 'production' ? ['@sveltejs/kit'] : []
+	build: {
+		target: 'es2022'
+	},
+	optimizeDeps: {
+		include: ['prismjs', 'prism-svelte']
 	},
 	test: {
 		expect: { requireAssertions: true },

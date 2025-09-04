@@ -4,7 +4,7 @@
 	import ApiKeysRequiredModal from '$lib/modules/settings/ApiKeysRequiredModal.svelte';
 	import HistoryPanel from './HistoryPanel.svelte';
 	import SessionMenu from './SessionMenu.svelte';
-	import { Undo2, Redo2, History, Code, MessageSquare, Menu, X } from '@lucide/svelte';
+	import { Undo2, Redo2, History, Code, MessageSquare, Menu, X, Download } from '@lucide/svelte';
 	import { Plus } from '@lucide/svelte';
 	import { chatSessionsStore } from '$lib/core/stores/chatSessions';
 	import { chatStore } from '$lib/core/stores/chat';
@@ -28,6 +28,7 @@
 		onSelectVersion?: (index: number) => void;
 		onOpenChats?: () => void;
 		onNewChat?: () => void;
+		onExport?: () => void;
 		isWelcome?: boolean;
 		chatsBtnEl?: HTMLButtonElement | null;
 	}
@@ -42,6 +43,7 @@
 		onSelectVersion,
 		onOpenChats,
 		onNewChat,
+		onExport,
 		isWelcome = false,
 		chatsBtnEl = $bindable<HTMLButtonElement | null>(null)
 	}: Props = $props();
@@ -104,9 +106,9 @@
 				}
 			}
 
-			setTimeout(() => {
+			requestAnimationFrame(() => {
 				document.addEventListener('mousedown', handleClickOutside);
-			}, 0);
+			});
 
 			return () => {
 				document.removeEventListener('mousedown', handleClickOutside);
@@ -150,9 +152,22 @@
 					aria-label="New Chat"
 					title="New Chat"
 					type="button"
+					class="hidden sm:inline-flex"
 				>
 					<Plus class="size-4" />
-					<span class="ml-1 text-xs hidden sm:inline">New</span>
+					<span class="ml-1 text-xs">New</span>
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={onExport}
+					aria-label="Export Component"
+					title="Export Component"
+					type="button"
+					class="hidden sm:inline-flex"
+				>
+					<Download class="size-4" />
+					<span class="ml-1 text-xs">Export</span>
 				</Button>
 			{/if}
 		</div>
@@ -227,6 +242,27 @@
 			{#if mobileMenuOpen}
 				<div class="absolute top-full right-0 mt-1 w-48 bg-card border rounded-md shadow-lg z-50 sm:hidden">
 					<div class="py-1">
+						<button
+							onclick={() => {
+								createNewChat();
+								mobileMenuOpen = false;
+							}}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+						>
+							<Plus class="size-4" />
+							New Chat
+						</button>
+						<button
+							onclick={() => {
+								onExport?.();
+								mobileMenuOpen = false;
+							}}
+							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+						>
+							<Download class="size-4" />
+							Export Component
+						</button>
+						<div class="border-t border-border my-1"></div>
 						<button
 							onclick={() => {
 								onUndo?.();

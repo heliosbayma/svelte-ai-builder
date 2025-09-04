@@ -23,6 +23,7 @@
 	let mountAttemptId: number | null = null;
 	let mountAttempts = 0;
 	let lastCompiledJs = '';
+	let lastPostedJs = '';
 	let hasFatalMountError = $state(false);
 	let targetOrigin: string | null = null;
 	const sandboxAttrs = 'allow-scripts allow-same-origin';
@@ -98,9 +99,6 @@
 		if (event.data?.type === 'preview-ready') {
 			iframeReady = true;
 			postTheme();
-			if (!compiledJs && !previewHtml) {
-				postLoadingMessage(t('loading.default'));
-			}
 			if (loadingMessage && !isMounted) {
 				if (isWelcomeMessage(loadingMessage)) {
 					postWelcomeMessage(loadingMessage);
@@ -162,6 +160,7 @@
 		isMounted = false;
 		hasFatalMountError = false;
 		lastCompiledJs = '';
+		lastPostedJs = '';
 		if (mountAttemptId) clearTimeout(mountAttemptId);
 		mountAttemptId = null;
 		if (iframeRef?.contentWindow && iframeReady) {
@@ -187,6 +186,7 @@
 					isMounted = false;
 					// Force a navigation to ensure prior app DOM is gone
 					iframeRef.src = '/preview#' + now;
+					lastPostedJs = '';
 				} catch {}
 			}
 		}
@@ -196,7 +196,7 @@
 		const canPostCode = compiledJs && iframeRef?.contentWindow && iframeReady;
 		if (!canPostCode) return;
 
-		if (compiledJs !== lastCompiledJs) {
+		if (compiledJs !== lastCompiledJs && compiledJs !== lastPostedJs) {
 			isMounted = false;
 			hasFatalMountError = false;
 			if (mountAttemptId) clearTimeout(mountAttemptId);
@@ -208,6 +208,7 @@
 					postLoadingMessage(loadingMessage);
 				}
 			}
+			lastPostedJs = compiledJs;
 			postCodeToIframe();
 			mountAttempts = 0;
 			scheduleMountAttempt();

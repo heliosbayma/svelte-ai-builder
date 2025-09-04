@@ -5,6 +5,7 @@
 	import { Send, X, Sparkles, ChevronDown } from '@lucide/svelte';
 	import { LLM_PROVIDERS } from '$lib/shared/constants/providers';
 	import { en } from '$lib/shared/i18n';
+	import { warning as toastWarning } from '$lib/core/stores/toast';
 
 	interface Props {
 		currentPrompt: string;
@@ -62,12 +63,44 @@
 
 		if (wantsSendOnEnter || wantsCtrlSend) {
 			event.preventDefault();
+
+			// Validate message length (minimum 3 characters)
+			const trimmedPrompt = currentPrompt.trim();
+			if (trimmedPrompt.length < 3) {
+				toastWarning(
+					'Please write a message with at least 3 characters to generate your component.',
+					{
+						title: 'Message too short'
+					}
+				);
+				return;
+			}
+
 			onSubmit();
 		}
 	}
 
 	function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
+
+		// Validate message length (minimum 3 characters)
+		const trimmedPrompt = currentPrompt.trim();
+		if (trimmedPrompt.length < 3) {
+			toastWarning(
+				'Please write a message with at least 3 characters to generate your component.',
+				{
+					title: 'Message too short'
+				}
+			);
+
+			// Auto-focus the textarea
+			const textarea = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
+			if (textarea) {
+				textarea.focus();
+			}
+			return;
+		}
+
 		onSubmit();
 	}
 
@@ -127,7 +160,9 @@
 			/>
 
 			<!-- Bottom controls: left checkbox; right model select + icon-only send -->
-			<div class="absolute left-3 right-3 bottom-3 flex items-center justify-end sm:justify-between gap-2">
+			<div
+				class="absolute left-3 right-3 bottom-3 flex items-center justify-end sm:justify-between gap-2"
+			>
 				<div class="text-xs text-muted-foreground hidden sm:block">
 					<label class="flex items-center gap-1.5 cursor-pointer">
 						<input
@@ -151,40 +186,49 @@
 							{en.actions.ideas}
 						</button>
 					{/if}
-					<select
-						class="select-mobile h-8 px-2 text-[10px] rounded text-foreground border border-border/40 bg-background outline-none focus:outline-none focus:ring-0 cursor-pointer"
-						value={modelInput}
-						onchange={handleModelChange}
-						disabled={isGenerating}
-						aria-label={t('chat.modelOverride')}
-						title={t('chat.modelOverride')}
-					>
-						<option value="" class="bg-background text-foreground">{t('chat.autoModel')}</option>
-						<optgroup label={labelForProvider('openai')} class="bg-background">
-							<option value="gpt-4o" class="bg-background text-foreground">{t('models.openai.gpt-4o')}</option>
-							<option value="gpt-4o-mini" class="bg-background text-foreground">{t('models.openai.gpt-4o-mini')}</option>
-						</optgroup>
-						<optgroup label={labelForProvider('anthropic')} class="bg-background">
-							<option value="claude-3-5-sonnet-20241022" class="bg-background text-foreground"
-								>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
-							>
-							<option value="claude-3-5-haiku-20241022" class="bg-background text-foreground"
-								>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
-							>
-						</optgroup>
-						<optgroup label={labelForProvider('gemini')} class="bg-background">
-							<option value="gemini-1.5-pro-latest" class="bg-background text-foreground"
-								>{t('models.gemini.gemini-1_5-pro-latest')}</option
-							>
-							<option value="gemini-1.5-flash-latest" class="bg-background text-foreground"
-								>{t('models.gemini.gemini-1_5-flash-latest')}</option
-							>
-						</optgroup>
-					</select>
+					<div class="relative inline-block">
+						<select
+							class="select-mobile h-8 pl-2 pr-6 text-[10px] rounded text-foreground border border-border/40 bg-background outline-none focus:outline-none focus:ring-0 cursor-pointer appearance-none text-right"
+							value={modelInput}
+							onchange={handleModelChange}
+							disabled={isGenerating}
+							aria-label={t('chat.modelOverride')}
+							title={t('chat.modelOverride')}
+						>
+							<option value="" class="bg-background text-foreground">{t('chat.autoModel')}</option>
+							<optgroup label={labelForProvider('openai')} class="bg-background">
+								<option value="gpt-4o" class="bg-background text-foreground"
+									>{t('models.openai.gpt-4o')}</option
+								>
+								<option value="gpt-4o-mini" class="bg-background text-foreground"
+									>{t('models.openai.gpt-4o-mini')}</option
+								>
+							</optgroup>
+							<optgroup label={labelForProvider('anthropic')} class="bg-background">
+								<option value="claude-3-5-sonnet-20241022" class="bg-background text-foreground"
+									>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
+								>
+								<option value="claude-3-5-haiku-20241022" class="bg-background text-foreground"
+									>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
+								>
+							</optgroup>
+							<optgroup label={labelForProvider('gemini')} class="bg-background">
+								<option value="gemini-1.5-pro-latest" class="bg-background text-foreground"
+									>{t('models.gemini.gemini-1_5-pro-latest')}</option
+								>
+								<option value="gemini-1.5-flash-latest" class="bg-background text-foreground"
+									>{t('models.gemini.gemini-1_5-flash-latest')}</option
+								>
+							</optgroup>
+						</select>
+						<ChevronDown
+							class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+						/>
+					</div>
 					<Button
 						type="submit"
 						size="sm"
-						disabled={!currentPrompt.trim() || isGenerating}
+						disabled={isGenerating}
 						class="h-8 w-8 p-0 rounded-full"
 						aria-label={t('actions.send')}
 					>
@@ -237,7 +281,7 @@
 			background-color: hsl(var(--background)) !important;
 			color: hsl(var(--foreground)) !important;
 		}
-		
+
 		.select-mobile option {
 			background-color: hsl(var(--background)) !important;
 			color: hsl(var(--foreground)) !important;

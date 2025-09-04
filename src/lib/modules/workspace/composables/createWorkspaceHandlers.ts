@@ -24,7 +24,7 @@ export function createWorkspaceHandlers({ compilation, layout }: CreateWorkspace
 		compilation.setCode(code);
 
 		try {
-			compilation.setLoading(t('loading.default'));
+			compilation.setLoading(t('loading.compiling'));
 			const result = await svelteCompiler.compile(code);
 
 			let generatedPreviewHtml = '';

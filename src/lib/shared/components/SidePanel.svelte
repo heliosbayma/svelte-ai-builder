@@ -52,10 +52,10 @@
 				}
 			}
 
-			// Add listener on next tick to avoid immediate closing
-			setTimeout(() => {
+			// Add listener on next frame to avoid immediate closing
+			requestAnimationFrame(() => {
 				document.addEventListener('mousedown', handleClickOutside);
-			}, 0);
+			});
 
 			return () => {
 				document.removeEventListener('mousedown', handleClickOutside);

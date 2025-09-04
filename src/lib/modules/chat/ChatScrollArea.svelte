@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import type { ChatMessage } from '$lib/core/stores/chat';
 	import { t } from '$lib/shared/i18n';
+	import { en } from '$lib/shared/i18n';
 	import ChatMessageComponent from './ChatMessage.svelte';
 
 	interface Props {
@@ -27,6 +28,15 @@
 	}: Props = $props();
 	let chatContainer: HTMLElement | undefined;
 	let isAtBottom = $state(true);
+
+	// Random inspiration when empty
+	let suggestion = $state('');
+	$effect(() => {
+		if (messages.length === 0) {
+			const pool = en.inspirations as readonly string[];
+			if (pool?.length) suggestion = pool[Math.floor(Math.random() * pool.length)];
+		}
+	});
 
 	// Virtualization state (temporarily disabled to avoid scroll loop on mobile branch)
 	let containerHeight = $state(0);
@@ -114,14 +124,18 @@
 	aria-label={t('chat.conversationLabel')}
 >
 	{#if browser && messages.length === 0}
-		<div class="min-h-[40vh] grid place-content-center">
+		<div class="min-h-[50vh] grid place-content-center -translate-y-[8vh]">
 			<section
 				class="text-center text-muted-foreground"
 				role="status"
 				aria-label={t('chat.emptyState')}
 			>
 				<p class="text-sm">{emptyTitleOverride || t('chat.emptyState')}</p>
-				<p class="text-xs mt-2 opacity-70">{emptySubtextOverride || t('chat.emptySubtext')}</p>
+				{#if emptySubtextOverride}
+					<p class="text-xs mt-2 opacity-70">{emptySubtextOverride}</p>
+				{:else if suggestion}
+					<p class="text-xs mt-2 opacity-70">{`Try: "${suggestion}"`}</p>
+				{/if}
 			</section>
 		</div>
 	{:else}

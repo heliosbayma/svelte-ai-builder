@@ -281,9 +281,7 @@
 
 	<section
 		bind:this={inputContainer}
-		class={inlineInput
-			? 'relative z-10 bg-transparent px-0'
-			: 'flex-shrink-0 z-10 px-0 border-t border-border/50'}
+		class={inlineInput ? 'relative z-10 bg-transparent px-0' : 'flex-shrink-0 z-10 px-0'}
 		data-chat-input
 	>
 		<ChatInput

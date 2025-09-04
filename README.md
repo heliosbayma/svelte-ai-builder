@@ -2,6 +2,22 @@
 
 Transform natural language prompts into Svelte components using AI with real-time preview.
 
+## 🚀 One-Click Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fheliosbayma%2Fsvelte-ai-builder&project-name=svelte-ai-builder&repository-name=svelte-ai-builder)
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/heliosbayma/svelte-ai-builder)
+
+### Fly.io Deployment
+
+```bash
+# Install flyctl: https://fly.io/docs/hands-on/install-flyctl/
+fly auth login
+fly launch --no-deploy  # Creates app from fly.toml
+fly deploy               # Deploy your app
+fly open                 # Open in browser
+```
+
 ## Run locally (no Docker)
 
 ```bash

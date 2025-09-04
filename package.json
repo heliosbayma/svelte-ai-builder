@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"build:vercel": "node scripts/vercel-build.js",
 		"preview": "vite preview",
 		"dev:docker": "docker compose up --build",
 		"deploy:fly": "fly deploy",

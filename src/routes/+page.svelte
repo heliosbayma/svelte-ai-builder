@@ -80,9 +80,13 @@
 		loadCurrentVersion
 	} = createWorkspaceHandlers({ compilation, layout });
 
+	// Track if we're already generating to prevent duplicate loading states
+	let isGenerating = $state(false);
+
 	// Wrap handleCodeGenerated to exit welcome mode when generating
 	const handleCodeGenerated = (...args: Parameters<typeof _handleCodeGenerated>) => {
 		welcomeMode = false;
+		isGenerating = false; // Reset when code is actually generated
 		return _handleCodeGenerated(...args);
 	};
 
@@ -338,11 +342,10 @@
 					<ChatInterface
 						onCodeGenerated={handleCodeGenerated}
 						onStartGenerating={() => {
+							if (isGenerating) return; // Prevent duplicate loading states
+							isGenerating = true;
 							welcomeMode = false;
-							// Small delay to ensure welcome mode change is processed
-							setTimeout(() => {
-								compilation.setLoading(t('loading.default'));
-							}, 0);
+							compilation.setLoading(t('loading.default'));
 						}}
 						showMessages={false}
 						inlineInput={true}
@@ -388,6 +391,8 @@
 							<ChatInterface
 								onCodeGenerated={handleCodeGenerated}
 								onStartGenerating={() => {
+									if (isGenerating) return; // Prevent duplicate loading states
+									isGenerating = true;
 									welcomeMode = false;
 									compilation.setLoading(t('loading.default'));
 								}}
@@ -426,6 +431,8 @@
 						<ChatInterface
 							onCodeGenerated={handleCodeGenerated}
 							onStartGenerating={() => {
+								if (isGenerating) return; // Prevent duplicate loading states
+								isGenerating = true;
 								welcomeMode = false;
 								compilation.setLoading(t('loading.default'));
 							}}
