@@ -260,7 +260,7 @@
 			title={t('errors.noApiKeysConfigured')}
 			actionLabel={t('actions.addKeys')}
 			onAction={openApiKeys}
-			class="mx-auto my-3 inline-block shrink-0 min-w-56 max-w-[90%] sm:max-w-[30rem] rounded-sm px-3 py-2 text-xs"
+			class="mx-auto mt-2 mb-0 inline-block shrink-0 min-w-56 max-w-[90%] sm:max-w-[30rem] rounded-sm px-3 py-2 text-xs"
 		/>
 	{/if}
 	<!-- Conversation list -->
