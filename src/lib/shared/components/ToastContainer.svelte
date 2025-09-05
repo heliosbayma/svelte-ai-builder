@@ -51,14 +51,14 @@
 
 <!-- Toast Container -->
 <section
-	class="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+	class="pointer-events-none fixed top-4 right-3 sm:right-4 z-50 flex w-auto max-w-[92vw] sm:max-w-sm flex-col gap-2"
 	aria-live="polite"
 	aria-label="Notifications"
 >
 	{#each toasts as toast (toast.id)}
 		{@const IconComponent = iconMap[toast.type]}
 		<article
-			class="pointer-events-auto rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all duration-200 {colorMap[
+			class="pointer-events-auto relative overflow-hidden rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all duration-200 {colorMap[
 				toast.type
 			].container}"
 			role="alert"
@@ -75,7 +75,7 @@
 				</div>
 
 				<!-- Content -->
-				<div class="min-w-0 flex-1">
+				<div class="relative z-10 min-w-0 flex-1">
 					{#if toast.title}
 						<h4 class="mb-1 text-sm font-medium {colorMap[toast.type].title}">
 							{toast.title}

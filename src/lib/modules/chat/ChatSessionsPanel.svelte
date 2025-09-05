@@ -25,7 +25,7 @@
 	let query = $state('');
 
 	function createNew() {
-		const id = chatSessionsStore.createSession('New Chat');
+		const id = chatSessionsStore.createSession('New Project');
 		chatSessionsStore.setCurrent(id);
 		chatStore.replaceMessages([]);
 		historyStore.setCurrentSession(id);
@@ -43,12 +43,12 @@
 	}
 
 	function renameSession(meta: ChatSessionMeta) {
-		const title = prompt('Rename chat', meta.title) || meta.title;
+		const title = prompt('Rename project', meta.title) || meta.title;
 		chatSessionsStore.renameSession(meta.id, title.trim());
 	}
 
 	function deleteSession(meta: ChatSessionMeta) {
-		if (!confirm('Delete this chat?')) return;
+		if (!confirm('Delete this project?')) return;
 		chatSessionsStore.deleteSession(meta.id);
 	}
 
@@ -62,10 +62,10 @@
 
 <SidePanel
 	{isOpen}
-	title="Your Chats"
+	title="Projects"
 	{onClose}
 	showSearch={true}
-	searchPlaceholder="Search chats..."
+	searchPlaceholder="Search projects..."
 	searchValue={query}
 	onSearch={(v) => (query = v)}
 	{mode}
@@ -74,13 +74,13 @@
 	<button
 		class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded border px-2.5 py-1.5 text-xs"
 		onclick={createNew}
-		aria-label="New chat"
+		aria-label="New project"
 		type="button"
 	>
 		<Plus class="size-3.5" />
-		<span>New Chat</span>
+		<span>New Project</span>
 	</button>
-	<section aria-label="Chats list">
+	<section aria-label="Projects list">
 		<ul class="space-y-1.5" role="list">
 			{#each filteredSessions() as s (s.id)}
 				<li role="listitem">

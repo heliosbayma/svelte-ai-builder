@@ -9,28 +9,30 @@
 	let { mode, onModeChange }: Props = $props();
 </script>
 
-<div class="flex items-center justify-between">
+<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-7">
 	<Label class="text-sm">Storage mode</Label>
-	<div class="flex items-center gap-2">
-		<label class="flex items-center gap-1 text-xs">
+	<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+		<label class="flex items-center gap-2 text-xs leading-tight">
 			<input
 				type="radio"
 				name="storage"
 				value="local"
 				checked={mode === 'local'}
 				onchange={() => onModeChange('local')}
+				class="h-3.5 w-3.5"
 			/>
-			Local (persists across tabs)
+			<span>Local (persists across tabs)</span>
 		</label>
-		<label class="flex items-center gap-1 text-xs">
+		<label class="flex items-center gap-2 text-xs leading-tight">
 			<input
 				type="radio"
 				name="storage"
 				value="session"
 				checked={mode === 'session'}
 				onchange={() => onModeChange('session')}
+				class="h-3.5 w-3.5"
 			/>
-			Session-only
+			<span>Session-only</span>
 		</label>
 	</div>
 </div>

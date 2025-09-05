@@ -24,7 +24,8 @@ export const en = {
 		clearAll: 'Clear All',
 		saveKeys: 'Save Keys',
 		shuffle: 'Shuffle',
-		ideas: 'Ideas?'
+		ideas: 'Ideas?',
+		addKeys: 'Add Keys'
 	},
 
 	// Chat interface
@@ -94,7 +95,7 @@ export const en = {
 		compiling: 'Compiling code...',
 		mounting: 'Mounting preview...',
 		welcome: 'Welcome to the',
-		welcomeLong: "Let's start building your application!",
+		welcomeLong: 'Prompt. Preview. Iterate.',
 		undoing: 'Winding time… reweaving the last reality.',
 		redoing: 'Leaping forward… syncing with your future self.',
 		assemblingLatest: 'Assembling your latest creation…',
@@ -175,7 +176,13 @@ export const en = {
 		copyCode: 'Copy code',
 		refineComponent: 'Refine this generated component',
 		hideCode: 'Hide code',
-		showCode: 'Show code'
+		showCode: 'Show code',
+		whyApiKeys: 'Why are API keys needed?'
+	},
+
+	tooltips: {
+		apiKeysWhy:
+			'Your keys let the app call your chosen AI models to generate code. Keys are encrypted and stored locally; they never leave this browser.'
 	},
 
 	// Model names for display

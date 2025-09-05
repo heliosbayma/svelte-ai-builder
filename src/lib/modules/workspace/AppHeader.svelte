@@ -85,7 +85,7 @@
 	}
 
 	function createNewChat() {
-		const id = chatSessionsStore.createSession('New Chat');
+		const id = chatSessionsStore.createSession('New Project');
 		chatSessionsStore.setCurrent(id);
 		chatStore.replaceMessages([]);
 		historyStore.setCurrentSession(id);
@@ -135,20 +135,20 @@
 				size="sm"
 				bind:ref={chatsBtnEl}
 				onclick={onOpenChats}
-				aria-label="Chats"
-				title="Chats"
+				aria-label="Projects"
+				title="Projects"
 				type="button"
 			>
 				<MessageSquare class="size-4" />
-				<span class="ml-1 text-xs">Chats</span>
+				<span class="ml-1 text-xs">Projects</span>
 			</Button>
 			{#if !isWelcome}
 				<Button
 					variant="ghost"
 					size="sm"
 					onclick={createNewChat}
-					aria-label="New Chat"
-					title="New Chat"
+					aria-label="New Project"
+					title="New Project"
 					type="button"
 					class="hidden sm:inline-flex"
 				>
@@ -250,7 +250,7 @@
 							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm"
 						>
 							<Plus class="size-4" />
-							New Chat
+							New Project
 						</button>
 						<button
 							onclick={() => {

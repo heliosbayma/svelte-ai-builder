@@ -7,6 +7,22 @@
 	import { en } from '$lib/shared/i18n';
 	import { warning as toastWarning } from '$lib/core/stores/toast';
 
+	// --- Validation constants & helpers (DRY) ---
+	const MIN_PROMPT_CHARS = 10;
+	const MIN_PROMPT_WORDS = 2;
+	const TOO_SHORT_TITLE = 'Message too short';
+	function showTooShortToast() {
+		toastWarning(
+			`Please write at least ${MIN_PROMPT_WORDS} words or ${MIN_PROMPT_CHARS}+ characters to generate your component.`,
+			{ title: TOO_SHORT_TITLE }
+		);
+	}
+	function isTooShort(prompt: string) {
+		const trimmed = prompt.trim();
+		const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
+		return trimmed.length < MIN_PROMPT_CHARS || wordCount < MIN_PROMPT_WORDS;
+	}
+
 	interface Props {
 		currentPrompt: string;
 		isGenerating: boolean;
@@ -64,15 +80,9 @@
 		if (wantsSendOnEnter || wantsCtrlSend) {
 			event.preventDefault();
 
-			// Validate message length (minimum 3 characters)
-			const trimmedPrompt = currentPrompt.trim();
-			if (trimmedPrompt.length < 3) {
-				toastWarning(
-					'Please write a message with at least 3 characters to generate your component.',
-					{
-						title: 'Message too short'
-					}
-				);
+			// Validate message length
+			if (isTooShort(currentPrompt)) {
+				showTooShortToast();
 				return;
 			}
 
@@ -83,15 +93,9 @@
 	function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 
-		// Validate message length (minimum 3 characters)
-		const trimmedPrompt = currentPrompt.trim();
-		if (trimmedPrompt.length < 3) {
-			toastWarning(
-				'Please write a message with at least 3 characters to generate your component.',
-				{
-					title: 'Message too short'
-				}
-			);
+		// Validate message length
+		if (isTooShort(currentPrompt)) {
+			showTooShortToast();
 
 			// Auto-focus the textarea
 			const textarea = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
@@ -112,6 +116,17 @@
 	function handleModelChange(e: Event) {
 		const select = e.currentTarget as HTMLSelectElement;
 		onModelChange(select.value);
+	}
+
+	function clearPrompt() {
+		currentPrompt = '';
+		onPromptChange(currentPrompt);
+		const el = document.querySelector('[data-chat-textarea]') as HTMLTextAreaElement | null;
+		if (el) {
+			el.value = '';
+			el.style.height = 'auto';
+			el.focus();
+		}
 	}
 
 	// Watch for prompt changes to notify parent
@@ -145,13 +160,15 @@
 <form onsubmit={handleSubmit} aria-label={t('chat.inputForm')}>
 	<!-- Single composer-style input used across app -->
 	<div class="px-4 py-3">
-		<div class="border-border bg-background relative rounded-2xl border px-3 py-3 pb-14 shadow-sm">
+		<div
+			class={`relative rounded-2xl border px-3 py-2.5 pb-14 shadow-sm backdrop-blur-sm bg-background/70 border-border/40`}
+		>
 			<Textarea
 				bind:value={currentPrompt}
 				onkeydown={handleKeydown}
 				oninput={autoGrow}
 				placeholder={t('chat.placeholder')}
-				class="text-foreground placeholder:text-muted-foreground max-h-[240px] min-h-[68px] w-full resize-none overflow-x-hidden border-0 pr-16 break-words whitespace-pre-wrap focus:ring-0"
+				class="text-foreground placeholder:text-muted-foreground max-h-[240px] min-h-[68px] w-full resize-none overflow-x-hidden border-0 pr-14 break-normal whitespace-pre-wrap focus:ring-0 text-[15px] leading-6 sm:text-base sm:leading-6"
 				disabled={isGenerating}
 				aria-label={t('chat.inputLabel')}
 				data-chat-textarea
@@ -159,15 +176,15 @@
 
 			<!-- Bottom controls: left checkbox; right model select + icon-only send -->
 			<div
-				class="absolute right-3 bottom-3 left-3 flex items-center justify-end gap-2 sm:justify-between"
+				class="absolute left-3 right-3 bottom-3 flex items-center justify-end sm:justify-between gap-2.5"
 			>
-				<div class="text-muted-foreground hidden text-xs sm:block">
-					<label class="flex cursor-pointer items-center gap-1.5">
+				<div class="text-xs text-muted-foreground hidden sm:block">
+					<label class="flex items-center gap-1.5 cursor-pointer">
 						<input
 							type="checkbox"
 							checked={sendOnEnter}
 							oninput={handleToggleSendOnEnter}
-							class="h-3 w-3"
+							class="w-3 h-3"
 						/>
 						<span>{sendOnEnter ? t('chat.sendOnEnter') : t('chat.sendWithCmd')}</span>
 					</label>
@@ -176,7 +193,7 @@
 				<div class="flex items-center gap-2 sm:gap-4">
 					{#if showIdeasButton}
 						<button
-							class="border-border/60 bg-card/40 hover:bg-card/80 text-muted-foreground h-9 cursor-pointer rounded border px-3 text-xs font-medium transition-colors"
+							class="h-8 px-2 text-[10px] rounded border border-border/40 bg-card/30 hover:bg-card/50 text-muted-foreground cursor-pointer"
 							type="button"
 							onclick={insertIdea}
 							aria-label={en.actions.ideas}
@@ -184,53 +201,68 @@
 							{en.actions.ideas}
 						</button>
 					{/if}
-					<div class="relative inline-block">
-						<select
-							class="text-muted-foreground border-border/60 bg-card/40 hover:bg-card/80 h-9 cursor-pointer appearance-none rounded border pr-6 pl-2 text-xs font-medium transition-colors outline-none focus:ring-0 focus:outline-none"
-							value={modelInput}
-							onchange={handleModelChange}
-							disabled={isGenerating}
-							aria-label={t('chat.modelOverride')}
-							title={t('chat.modelOverride')}
-						>
-							<option value="" class="bg-background text-foreground">{t('chat.autoModel')}</option>
-							<optgroup label={labelForProvider('openai')} class="bg-background">
-								<option value="gpt-4o" class="bg-background text-foreground"
-									>{t('models.openai.gpt-4o')}</option
+					<div class="relative inline-flex items-center gap-1">
+						{#if currentPrompt.trim().length}
+							<button
+								class="h-8 w-8 rounded-md border border-border/40 bg-card/30 text-muted-foreground hover:bg-card/50 cursor-pointer"
+								type="button"
+								onclick={clearPrompt}
+								title="Clear"
+								aria-label="Clear"
+							>
+								<span class="block text-[10px] font-medium">×</span>
+							</button>
+						{/if}
+
+						<div class="relative inline-block">
+							<select
+								class="select-mobile h-8 pl-2 pr-6 text-[10px] rounded text-foreground border border-border/40 bg-background outline-none focus:outline-none focus:ring-0 cursor-pointer appearance-none text-right"
+								value={modelInput}
+								onchange={handleModelChange}
+								disabled={isGenerating}
+								aria-label={t('chat.modelOverride')}
+								title={t('chat.modelOverride')}
+							>
+								<option value="" class="bg-background text-foreground">{t('chat.autoModel')}</option
 								>
-								<option value="gpt-4o-mini" class="bg-background text-foreground"
-									>{t('models.openai.gpt-4o-mini')}</option
-								>
-							</optgroup>
-							<optgroup label={labelForProvider('anthropic')} class="bg-background">
-								<option value="claude-3-5-sonnet-20241022" class="bg-background text-foreground"
-									>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
-								>
-								<option value="claude-3-5-haiku-20241022" class="bg-background text-foreground"
-									>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
-								>
-							</optgroup>
-							<optgroup label={labelForProvider('gemini')} class="bg-background">
-								<option value="gemini-1.5-pro-latest" class="bg-background text-foreground"
-									>{t('models.gemini.gemini-1_5-pro-latest')}</option
-								>
-								<option value="gemini-1.5-flash-latest" class="bg-background text-foreground"
-									>{t('models.gemini.gemini-1_5-flash-latest')}</option
-								>
-							</optgroup>
-						</select>
-						<ChevronDown
-							class="text-muted-foreground pointer-events-none absolute top-1/2 right-2 h-3.5 w-3.5 -translate-y-1/2"
-						/>
+								<optgroup label={labelForProvider('openai')} class="bg-background">
+									<option value="gpt-4o" class="bg-background text-foreground"
+										>{t('models.openai.gpt-4o')}</option
+									>
+									<option value="gpt-4o-mini" class="bg-background text-foreground"
+										>{t('models.openai.gpt-4o-mini')}</option
+									>
+								</optgroup>
+								<optgroup label={labelForProvider('anthropic')} class="bg-background">
+									<option value="claude-3-5-sonnet-20241022" class="bg-background text-foreground"
+										>{t('models.anthropic.claude-3-5-sonnet-20241022')}</option
+									>
+									<option value="claude-3-5-haiku-20241022" class="bg-background text-foreground"
+										>{t('models.anthropic.claude-3-5-haiku-20241022')}</option
+									>
+								</optgroup>
+								<optgroup label={labelForProvider('gemini')} class="bg-background">
+									<option value="gemini-1.5-pro-latest" class="bg-background text-foreground"
+										>{t('models.gemini.gemini-1_5-pro-latest')}</option
+									>
+									<option value="gemini-1.5-flash-latest" class="bg-background text-foreground"
+										>{t('models.gemini.gemini-1_5-flash-latest')}</option
+									>
+								</optgroup>
+							</select>
+							<ChevronDown
+								class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+							/>
+						</div>
 					</div>
 					<Button
 						type="submit"
 						size="sm"
 						disabled={isGenerating}
-						class="h-8 w-8 rounded-full p-0"
+						class="h-10 w-10 sm:h-11 sm:w-11 p-0 rounded-full"
 						aria-label={t('actions.send')}
 					>
-						<Send class="h-4 w-4" />
+						<Send class="w-4 h-4" />
 					</Button>
 				</div>
 			</div>
@@ -242,10 +274,10 @@
 						size="sm"
 						onclick={onBuildFromPlan}
 						disabled={isGenerating}
-						class="h-7 gap-1.5 px-2 text-xs"
+						class="h-7 px-2 text-xs gap-1.5"
 						aria-label={t('a11y.buildFromPlan')}
 					>
-						<Sparkles class="h-3.5 w-3.5" />
+						<Sparkles class="w-3.5 h-3.5" />
 						{t('actions.build')}
 					</Button>
 				</div>
@@ -312,5 +344,12 @@
 		/* Allow breaking long words but prefer breaking at word boundaries */
 		word-break: break-word;
 		overflow-wrap: anywhere;
+	}
+
+	/* Apply the same no-intra-word rules to the placeholder */
+	:global([data-chat-textarea]::placeholder) {
+		word-break: keep-all !important;
+		overflow-wrap: normal !important;
+		hyphens: none !important;
 	}
 </style>

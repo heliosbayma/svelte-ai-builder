@@ -256,12 +256,11 @@
 >
 	{#if $apiKeysReady && !hasAnyApiKey()}
 		<InlineNotice
-			type="warning"
+			type="error"
 			title={t('errors.noApiKeysConfigured')}
-			message={t('validation.apiKeyMinRequired')}
-			actionLabel={t('session.apiKeys')}
+			actionLabel={t('actions.addKeys')}
 			onAction={openApiKeys}
-			class="mx-auto my-4 max-w-[80%] text-sm sm:max-w-[30rem]"
+			class="mx-auto my-3 inline-block shrink-0 min-w-56 max-w-[90%] sm:max-w-[30rem] rounded-sm px-3 py-2 text-xs"
 		/>
 	{/if}
 	<!-- Conversation list -->
