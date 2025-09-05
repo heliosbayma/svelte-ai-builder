@@ -33,7 +33,7 @@
 			href={`https://${provider.hint}`}
 			target="_blank"
 			rel="noopener"
-			class="text-xs text-muted-foreground hover:underline ml-auto"
+			class="text-muted-foreground ml-auto text-xs hover:underline"
 		>
 			Get key →
 		</a>
@@ -54,7 +54,7 @@
 	/>
 	<div class="flex items-center justify-between">
 		<button
-			class="text-xs text-muted-foreground hover:underline"
+			class="text-muted-foreground text-xs hover:underline"
 			type="button"
 			onclick={() => (reveal = !reveal)}
 			aria-pressed={reveal}
@@ -62,10 +62,10 @@
 		>
 			{reveal ? 'Hide' : 'Show'}
 		</button>
-		<span class="text-[11px] text-muted-foreground">Keys are stored locally and encrypted</span>
+		<span class="text-muted-foreground text-[11px]">Keys are stored locally and encrypted</span>
 	</div>
 	{#if error}
-		<p id={provider.key + '-key-error'} class="text-xs text-red-500 animate-in fade-in">
+		<p id={provider.key + '-key-error'} class="animate-in fade-in text-xs text-red-500">
 			{error}
 		</p>
 	{/if}

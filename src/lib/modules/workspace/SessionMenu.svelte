@@ -206,62 +206,62 @@
 		></button>
 		<nav
 			bind:this={menuRef}
-			class="absolute right-0 z-50 mt-2 w-48 bg-popover border rounded-lg shadow-lg p-1"
+			class="bg-popover absolute right-0 z-50 mt-2 w-48 rounded-lg border p-1 shadow-lg"
 			aria-label="Session menu"
 			role="presentation"
 			onkeydown={handleMenuKeydown}
 		>
-			<section class="p-1 space-y-0.5">
+			<section class="space-y-0.5 p-1">
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
+					class="hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						exportSession();
 						onClose();
 					}}
 				>
-					<Download class="size-4 text-muted-foreground" />
+					<Download class="text-muted-foreground size-4" />
 					{t('session.exportSession')}
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
+					class="hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						triggerImport();
 						onClose();
 					}}
 				>
-					<Upload class="size-4 text-muted-foreground" />
+					<Upload class="text-muted-foreground size-4" />
 					{t('session.importSession')}
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
+					class="hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						onOpenApiKeys();
 					}}
 				>
-					<Key class="size-4 text-muted-foreground" />
+					<Key class="text-muted-foreground size-4" />
 					{t('session.apiKeys')}
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3"
+					class="hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						toggleTheme();
 						onClose();
 					}}
 				>
-					<Palette class="size-4 text-muted-foreground" />
+					<Palette class="text-muted-foreground size-4" />
 					{t('session.toggleTheme')}
 				</button>
 			</section>
 
-			<div class="border-t my-1"></div>
+			<div class="my-1 border-t"></div>
 
-			<div class="p-1 space-y-0.5">
+			<div class="space-y-0.5 p-1">
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3 text-destructive hover:text-destructive"
+					class="hover:bg-accent text-destructive hover:text-destructive flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						if (confirm('Clear API keys from this browser?')) apiKeyStore.clear();
@@ -272,7 +272,7 @@
 					{t('session.clearApiKeys')}
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-3 text-destructive hover:text-destructive"
+					class="hover:bg-accent text-destructive hover:text-destructive flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
 					role="menuitem"
 					onclick={() => {
 						clearSession();

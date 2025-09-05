@@ -27,7 +27,7 @@ function createChatSessionsStore() {
 		version: 1,
 		debounceMs: 200
 	});
-	
+
 	const restored = persist.load(initial);
 	const { subscribe, update } = writable<ChatSessionsState>(restored);
 

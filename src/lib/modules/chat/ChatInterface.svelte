@@ -250,23 +250,22 @@
 </script>
 
 <article
-	class="flex flex-col h-full"
+	class="flex h-full flex-col"
 	role="application"
 	aria-label="Chat interface for Svelte component generation"
 >
 	{#if $apiKeysReady && !hasAnyApiKey()}
 		<InlineNotice
-			type="warning"
+			type="error"
 			title={t('errors.noApiKeysConfigured')}
-			message={t('validation.apiKeyMinRequired')}
-			actionLabel={t('session.apiKeys')}
+			actionLabel={t('actions.addKeys')}
 			onAction={openApiKeys}
-			class="w-[30rem] mx-auto mt-6 mb-3"
+			class="mx-auto mt-2 mb-0 inline-block shrink-0 min-w-56 max-w-[90%] sm:max-w-[30rem] rounded-sm px-3 py-2 text-xs"
 		/>
 	{/if}
 	<!-- Conversation list -->
 	{#if showMessages}
-		<section class="flex-1 min-h-0 overflow-y-auto">
+		<section class="min-h-0 flex-1 overflow-y-auto">
 			<ChatScrollArea
 				messages={$chat.messages}
 				isGenerating={$chat.isGenerating}
@@ -281,7 +280,7 @@
 
 	<section
 		bind:this={inputContainer}
-		class={inlineInput ? 'relative z-10 bg-transparent px-0' : 'flex-shrink-0 z-10 px-0'}
+		class={inlineInput ? 'relative z-10 bg-transparent px-0' : 'z-10 flex-shrink-0 px-0'}
 		data-chat-input
 	>
 		<ChatInput

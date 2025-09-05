@@ -51,14 +51,14 @@
 
 <!-- Toast Container -->
 <section
-	class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+	class="pointer-events-none fixed top-4 right-3 sm:right-4 z-50 flex w-auto max-w-[92vw] sm:max-w-sm flex-col gap-2"
 	aria-live="polite"
 	aria-label="Notifications"
 >
 	{#each toasts as toast (toast.id)}
 		{@const IconComponent = iconMap[toast.type]}
 		<article
-			class="pointer-events-auto rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all duration-200 {colorMap[
+			class="pointer-events-auto relative overflow-hidden rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all duration-200 {colorMap[
 				toast.type
 			].container}"
 			role="alert"
@@ -67,17 +67,17 @@
 			<div class="flex items-start gap-3">
 				<!-- Icon -->
 				<div
-					class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center {colorMap[
+					class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full {colorMap[
 						toast.type
 					].icon}"
 				>
-					<IconComponent class="w-4 h-4" />
+					<IconComponent class="h-4 w-4" />
 				</div>
 
 				<!-- Content -->
-				<div class="flex-1 min-w-0">
+				<div class="relative z-10 min-w-0 flex-1">
 					{#if toast.title}
-						<h4 class="text-sm font-medium mb-1 {colorMap[toast.type].title}">
+						<h4 class="mb-1 text-sm font-medium {colorMap[toast.type].title}">
 							{toast.title}
 						</h4>
 					{/if}
@@ -88,7 +88,7 @@
 					<!-- Action Button -->
 					{#if toast.action}
 						<button
-							class="mt-3 text-xs font-medium underline hover:no-underline transition-all {colorMap[
+							class="mt-3 text-xs font-medium underline transition-all hover:no-underline {colorMap[
 								toast.type
 							].title}"
 							onclick={() => handleAction(toast)}
@@ -101,13 +101,13 @@
 				<!-- Dismiss Button -->
 				{#if toast.dismissible}
 					<button
-						class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors {colorMap[
+						class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5 {colorMap[
 							toast.type
 						].text}"
 						onclick={() => handleDismiss(toast.id)}
 						aria-label="Dismiss notification"
 					>
-						<X class="w-4 h-4" />
+						<X class="h-4 w-4" />
 					</button>
 				{/if}
 			</div>
@@ -115,7 +115,7 @@
 			<!-- Progress Bar (for timed toasts) -->
 			{#if toast.duration && toast.duration > 0}
 				<div
-					class="absolute bottom-0 left-0 h-0.5 bg-current opacity-20 rounded-b-lg animate-shrink-width"
+					class="animate-shrink-width absolute bottom-0 left-0 h-0.5 rounded-b-lg bg-current opacity-20"
 					style="animation-duration: {toast.duration}ms"
 				></div>
 			{/if}

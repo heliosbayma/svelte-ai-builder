@@ -117,7 +117,7 @@
 		/>
 	{/each}
 
-	<footer class="flex items-center justify-between pt-4 border-t">
+	<footer class="flex items-center justify-between border-t pt-4">
 		<Button
 			variant="ghost"
 			size="sm"

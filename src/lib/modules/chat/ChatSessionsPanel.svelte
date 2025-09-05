@@ -25,7 +25,7 @@
 	let query = $state('');
 
 	function createNew() {
-		const id = chatSessionsStore.createSession('New Chat');
+		const id = chatSessionsStore.createSession('New Project');
 		chatSessionsStore.setCurrent(id);
 		chatStore.replaceMessages([]);
 		historyStore.setCurrentSession(id);
@@ -43,12 +43,12 @@
 	}
 
 	function renameSession(meta: ChatSessionMeta) {
-		const title = prompt('Rename chat', meta.title) || meta.title;
+		const title = prompt('Rename project', meta.title) || meta.title;
 		chatSessionsStore.renameSession(meta.id, title.trim());
 	}
 
 	function deleteSession(meta: ChatSessionMeta) {
-		if (!confirm('Delete this chat?')) return;
+		if (!confirm('Delete this project?')) return;
 		chatSessionsStore.deleteSession(meta.id);
 	}
 
@@ -62,33 +62,33 @@
 
 <SidePanel
 	{isOpen}
-	title="Your Chats"
+	title="Projects"
 	{onClose}
 	showSearch={true}
-	searchPlaceholder="Search chats..."
+	searchPlaceholder="Search projects..."
 	searchValue={query}
 	onSearch={(v) => (query = v)}
 	{mode}
 	{anchorRect}
 >
 	<button
-		class="w-full mb-2 flex items-center justify-center gap-2 px-2.5 py-1.5 text-xs border rounded cursor-pointer"
+		class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded border px-2.5 py-1.5 text-xs"
 		onclick={createNew}
-		aria-label="New chat"
+		aria-label="New project"
 		type="button"
 	>
 		<Plus class="size-3.5" />
-		<span>New Chat</span>
+		<span>New Project</span>
 	</button>
-	<section aria-label="Chats list">
+	<section aria-label="Projects list">
 		<ul class="space-y-1.5" role="list">
 			{#each filteredSessions() as s (s.id)}
 				<li role="listitem">
 					<article
-						class="w-full p-2.5 rounded-lg border hover:bg-accent transition-colors border-transparent hover:border-border flex items-center justify-between"
+						class="hover:bg-accent hover:border-border flex w-full items-center justify-between rounded-lg border border-transparent p-2.5 transition-colors"
 					>
 						<button
-							class="flex-1 text-left cursor-pointer"
+							class="flex-1 cursor-pointer text-left"
 							onclick={() => openSession(s.id)}
 							aria-label={`Open chat ${s.title}`}
 							type="button"
@@ -98,7 +98,7 @@
 						</button>
 						<div class="flex items-center gap-1">
 							<button
-								class="p-1 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer opacity-60 hover:opacity-100"
+								class="hover:bg-accent hover:text-accent-foreground cursor-pointer rounded p-1 opacity-60 transition-colors hover:opacity-100"
 								onclick={(e) => {
 									e.stopPropagation();
 									renameSession(s);
@@ -109,7 +109,7 @@
 								<Pencil class="size-4" />
 							</button>
 							<button
-								class="p-1 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer opacity-60 hover:opacity-100"
+								class="hover:bg-accent hover:text-accent-foreground cursor-pointer rounded p-1 opacity-60 transition-colors hover:opacity-100"
 								onclick={(e) => {
 									e.stopPropagation();
 									deleteSession(s);
@@ -124,7 +124,7 @@
 				</li>
 			{/each}
 			{#if filteredSessions().length === 0}
-				<li class="text-xs text-muted-foreground">No chats found.</li>
+				<li class="text-muted-foreground text-xs">No chats found.</li>
 			{/if}
 		</ul>
 	</section>

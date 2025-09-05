@@ -17,6 +17,7 @@
 		modalStore
 	} from '$lib/core/stores/modals';
 	import { t } from '$lib/shared/i18n';
+	import Logo from '$lib/shared/components/Logo.svelte';
 
 	interface Props {
 		showCode: boolean;
@@ -84,7 +85,7 @@
 	}
 
 	function createNewChat() {
-		const id = chatSessionsStore.createSession('New Chat');
+		const id = chatSessionsStore.createSession('New Project');
 		chatSessionsStore.setCurrent(id);
 		chatStore.replaceMessages([]);
 		historyStore.setCurrentSession(id);
@@ -117,40 +118,37 @@
 	});
 </script>
 
-<header class="flex items-center justify-between h-11 sm:h-12 px-3 sm:px-4">
+<header class="flex h-11 items-center justify-between px-3 sm:h-12 sm:px-4">
 	<section class="flex items-center gap-2">
-		<h1 class="flex items-center leading-none">
-			<button
-				class="inline-flex items-center h-8 text-sm sm:text-base font-semibold tracking-tight cursor-pointer select-none bg-transparent border-0 p-0 m-0"
-				type="button"
-				onclick={createNewChat}
-				title={t('header.titleTooltip')}
-				aria-label={t('header.title')}
-			>
-				{t('header.title')}
-			</button>
-		</h1>
-		<div class="w-px h-5 bg-border ml-3 mr-2"></div>
+		<Logo
+			class={isWelcome ? "hidden" : "hidden sm:block"}
+			buttonClass="text-sm sm:text-base"
+			label={t('header.title')}
+			title={t('header.titleTooltip')}
+			ariaLabel={t('header.title')}
+			onClick={createNewChat}
+		/>
+		<div class={isWelcome ? "hidden" : "bg-border mr-2 ml-3 hidden h-5 w-px sm:block"}></div>
 		<div class="flex items-center gap-1.5">
 			<Button
 				variant="ghost"
 				size="sm"
 				bind:ref={chatsBtnEl}
 				onclick={onOpenChats}
-				aria-label="Chats"
-				title="Chats"
+				aria-label="Projects"
+				title="Projects"
 				type="button"
 			>
 				<MessageSquare class="size-4" />
-				<span class="ml-1 text-xs hidden sm:inline">Chats</span>
+				<span class="ml-1 text-xs">Projects</span>
 			</Button>
 			{#if !isWelcome}
 				<Button
 					variant="ghost"
 					size="sm"
 					onclick={createNewChat}
-					aria-label="New Chat"
-					title="New Chat"
+					aria-label="New Project"
+					title="New Project"
 					type="button"
 					class="hidden sm:inline-flex"
 				>
@@ -172,10 +170,10 @@
 			{/if}
 		</div>
 	</section>
-	<nav class="flex items-center gap-1 sm:gap-2.5 relative" data-mobile-menu>
+	<nav class="relative flex items-center gap-1 sm:gap-2.5" data-mobile-menu>
 		{#if !isWelcome}
 			<!-- Desktop: Show all buttons normally -->
-			<div class="hidden sm:flex items-center gap-1">
+			<div class="hidden items-center gap-1 sm:flex">
 				<Button
 					variant="ghost"
 					size="sm"
@@ -198,7 +196,7 @@
 				</Button>
 			</div>
 
-			<div class="w-px h-5 bg-border hidden sm:block"></div>
+			<div class="bg-border hidden h-5 w-px sm:block"></div>
 
 			<Button
 				variant="ghost"
@@ -240,36 +238,38 @@
 
 			<!-- Mobile dropdown menu -->
 			{#if mobileMenuOpen}
-				<div class="absolute top-full right-0 mt-1 w-48 bg-card border rounded-md shadow-lg z-50 sm:hidden">
+				<div
+					class="bg-card absolute top-full right-0 z-50 mt-1 w-48 rounded-md border shadow-lg sm:hidden"
+				>
 					<div class="py-1">
 						<button
 							onclick={() => {
 								createNewChat();
 								mobileMenuOpen = false;
 							}}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm"
 						>
 							<Plus class="size-4" />
-							New Chat
+							New Project
 						</button>
 						<button
 							onclick={() => {
 								onExport?.();
 								mobileMenuOpen = false;
 							}}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm"
 						>
 							<Download class="size-4" />
 							Export Component
 						</button>
-						<div class="border-t border-border my-1"></div>
+						<div class="border-border my-1 border-t"></div>
 						<button
 							onclick={() => {
 								onUndo?.();
 								mobileMenuOpen = false;
 							}}
 							disabled={!canUndo}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<Undo2 class="size-4" />
 							{t('header.undoTooltip')}
@@ -280,7 +280,7 @@
 								mobileMenuOpen = false;
 							}}
 							disabled={!canRedo}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<Redo2 class="size-4" />
 							{t('header.redoTooltip')}
@@ -290,7 +290,7 @@
 								toggleHistory();
 								mobileMenuOpen = false;
 							}}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm"
 						>
 							<History class="size-4" />
 							{t('header.historyTooltip')}
@@ -300,7 +300,7 @@
 								onToggleCode();
 								mobileMenuOpen = false;
 							}}
-							class="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+							class="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm"
 						>
 							<Code class="size-4" />
 							{showCode ? t('header.hideCodeTooltip') : t('header.codeTooltip')}

@@ -10,17 +10,17 @@
 	const providerSummary = $derived($telemetryByProvider);
 </script>
 
-<div class="fixed bottom-4 right-4 z-50">
-	<div class="bg-card border rounded-md shadow-md w-[360px] overflow-hidden">
-		<header class="px-3 py-2 flex items-center justify-between border-b">
+<div class="fixed right-4 bottom-4 z-50">
+	<div class="bg-card w-[360px] overflow-hidden rounded-md border shadow-md">
+		<header class="flex items-center justify-between border-b px-3 py-2">
 			<h3 class="text-sm font-semibold">Metrics</h3>
-			<button class="text-xs px-2 py-1 border rounded cursor-pointer" onclick={() => (open = !open)}
+			<button class="cursor-pointer rounded border px-2 py-1 text-xs" onclick={() => (open = !open)}
 				>{open ? 'Hide' : 'Show'}</button
 			>
 		</header>
 		{#if open}
 			<section class="p-3 text-xs">
-				<dl class="flex items-center gap-4 mb-2 text-muted-foreground">
+				<dl class="text-muted-foreground mb-2 flex items-center gap-4">
 					<dt class="sr-only">Runs</dt>
 					<dd>runs: <span class="text-foreground font-medium">{stats.count}</span></dd>
 					<dt class="sr-only">Average milliseconds</dt>
@@ -30,12 +30,12 @@
 				</dl>
 				<div class="mb-2">
 					<table class="w-full">
-						<thead class="text-[10px] text-muted-foreground">
+						<thead class="text-muted-foreground text-[10px]">
 							<tr>
-								<th class="text-left pr-2">provider</th>
-								<th class="text-right pr-2">runs</th>
-								<th class="text-right pr-2">avg ms</th>
-								<th class="text-right pr-2">errors</th>
+								<th class="pr-2 text-left">provider</th>
+								<th class="pr-2 text-right">runs</th>
+								<th class="pr-2 text-right">avg ms</th>
+								<th class="pr-2 text-right">errors</th>
 								<th class="text-right">tokens</th>
 							</tr>
 						</thead>
@@ -54,11 +54,11 @@
 				</div>
 				<div class="max-h-56 overflow-auto">
 					<table class="w-full">
-						<thead class="text-[10px] text-muted-foreground">
+						<thead class="text-muted-foreground text-[10px]">
 							<tr>
-								<th class="text-left pr-2">when</th>
-								<th class="text-left pr-2">purpose</th>
-								<th class="text-left pr-2">model</th>
+								<th class="pr-2 text-left">when</th>
+								<th class="pr-2 text-left">purpose</th>
+								<th class="pr-2 text-left">model</th>
 								<th class="text-right">ms</th>
 							</tr>
 						</thead>

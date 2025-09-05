@@ -22,12 +22,12 @@
 	showShortcutsHint={false}
 	{onClose}
 >
-	<p class="text-sm text-muted-foreground">
+	<p class="text-muted-foreground text-sm">
 		Add at least one API provider key to start generating applications. You can update or remove
 		keys anytime in Settings. Your keys remain encrypted on your device.
 	</p>
 
-	<footer class="flex items-center justify-end gap-2 pt-4 border-t">
+	<footer class="flex items-center justify-end gap-2 border-t pt-4">
 		<Button variant="outline" onclick={onClose}>Cancel</Button>
 		<Button onclick={handleAddKeys}>Add keys</Button>
 	</footer>
