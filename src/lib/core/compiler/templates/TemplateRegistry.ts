@@ -23,13 +23,13 @@ export class TemplateRegistry {
 
 	generateTemplate(originalSource: string): string {
 		const intent = this.intentDetector.detectIntent(originalSource);
-		
+
 		for (const template of this.templates) {
 			if (template.matches(intent)) {
 				return template.generate(intent);
 			}
 		}
-		
+
 		// Fallback (should never reach here due to DefaultTemplate)
 		return new DefaultTemplate().generate(intent);
 	}

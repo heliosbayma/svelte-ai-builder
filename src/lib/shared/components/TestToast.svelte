@@ -4,8 +4,8 @@
 	function testAll() {
 		success('Successfully completed the task!');
 		warning('This is a warning message', { title: 'Warning' });
-		info('Here is some helpful information', { 
-			title: 'Info', 
+		info('Here is some helpful information', {
+			title: 'Info',
 			action: { label: 'Learn More', handler: () => {} }
 		});
 		error('Something went wrong', {

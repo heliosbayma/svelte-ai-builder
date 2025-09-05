@@ -8,7 +8,7 @@
 
 	/* Headings base size to avoid UA default warnings */
 	h1 {
-		@apply text-2xl font-semibold my-2;
+		@apply my-2 text-2xl font-semibold;
 	}
 
 	/* Global scrollbar styling - matches chat scrollbar */

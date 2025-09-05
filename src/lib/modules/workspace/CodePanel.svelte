@@ -133,9 +133,9 @@
 	}
 </script>
 
-<section class="h-full min-h-0 flex flex-col p-4">
-	<header class="pb-4 flex items-center justify-between">
-		<h2 class="font-semibold text-sm">Generated Code</h2>
+<section class="flex h-full min-h-0 flex-col p-4">
+	<header class="flex items-center justify-between pb-4">
+		<h2 class="text-sm font-semibold">Generated Code</h2>
 		<div class="flex items-center gap-1">
 			<Button
 				variant="ghost"
@@ -171,21 +171,21 @@
 			</Button>
 		</div>
 	</header>
-	<section class="flex-1 min-h-0 overflow-hidden">
+	<section class="min-h-0 flex-1 overflow-hidden">
 		{#if $showDiff && $previousCode}
-			<div class="flex items-center justify-between mb-2 gap-2 text-xs">
+			<div class="mb-2 flex items-center justify-between gap-2 text-xs">
 				<div class="flex items-center gap-3">
-					<label class="flex items-center gap-2 cursor-pointer">
+					<label class="flex cursor-pointer items-center gap-2">
 						<input
-							class="h-3.5 w-3.5 rounded border-input text-primary focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+							class="border-input text-primary focus-visible:ring-ring/50 h-3.5 w-3.5 rounded focus-visible:ring-[2px]"
 							type="checkbox"
 							bind:checked={showOnlyChanges}
 						/>
 						<span class="text-muted-foreground">Only changes</span>
 					</label>
-					<label class="hidden sm:flex items-center gap-2 cursor-pointer">
+					<label class="hidden cursor-pointer items-center gap-2 sm:flex">
 						<input
-							class="h-3.5 w-3.5 rounded border-input text-primary focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+							class="border-input text-primary focus-visible:ring-ring/50 h-3.5 w-3.5 rounded focus-visible:ring-[2px]"
 							type="checkbox"
 							bind:checked={sideBySide}
 						/>
@@ -196,15 +196,15 @@
 
 			{#if sideBySide}
 				<!-- fallback to previous side-by-side when toggled -->
-				<div class="h-full min-h-0 flex flex-col sm:flex-row gap-4">
-					<Card class="flex-1 min-w-0 h-full min-h-0 p-2 font-mono text-xs flex flex-col">
-						<h3 class="font-semibold mb-2">Previous</h3>
-						<div class="flex-1 min-h-0 overflow-auto">
+				<div class="flex h-full min-h-0 flex-col gap-4 sm:flex-row">
+					<Card class="flex h-full min-h-0 min-w-0 flex-1 flex-col p-2 font-mono text-xs">
+						<h3 class="mb-2 font-semibold">Previous</h3>
+						<div class="min-h-0 flex-1 overflow-auto">
 							{#each diffOps as op, i (i)}
 								{#if op.type === 'equal'}
 									<div class="w-full min-w-0">
 										<pre
-											class={`inline-block text-xs max-h-full px-2 py-0.5`}
+											class={`inline-block max-h-full px-2 py-0.5 text-xs`}
 											style={preStyle()}><code class="language-svelte"
 												>{@html highlight(op.a ?? '')}</code
 											></pre>
@@ -212,25 +212,25 @@
 								{:else if op.type === 'remove'}
 									<div class={`w-full min-w-0 border-l-2 border-red-500 ${lineBgClass('remove')}`}>
 										<pre
-											class={`inline-block text-xs max-h-full px-2 py-0.5 ${preBgClass('remove')}`}
+											class={`inline-block max-h-full px-2 py-0.5 text-xs ${preBgClass('remove')}`}
 											style={preStyle()}><code class="language-svelte"
 												>{@html highlight(op.a ?? '')}</code
 											></pre>
 									</div>
 								{:else}
-									<div class="whitespace-pre text-xs opacity-50"></div>
+									<div class="text-xs whitespace-pre opacity-50"></div>
 								{/if}
 							{/each}
 						</div>
 					</Card>
-					<Card class="flex-1 min-w-0 h-full min-h-0 p-2 font-mono text-xs flex flex-col">
-						<h3 class="font-semibold mb-2">Current</h3>
-						<div class="flex-1 min-h-0 overflow-auto">
+					<Card class="flex h-full min-h-0 min-w-0 flex-1 flex-col p-2 font-mono text-xs">
+						<h3 class="mb-2 font-semibold">Current</h3>
+						<div class="min-h-0 flex-1 overflow-auto">
 							{#each diffOps as op, i (i)}
 								{#if op.type === 'equal'}
 									<div class="w-full min-w-0">
 										<pre
-											class={`inline-block text-xs max-h-full px-2 py-0.5`}
+											class={`inline-block max-h-full px-2 py-0.5 text-xs`}
 											style={preStyle()}><code class="language-svelte"
 												>{@html highlight(op.b ?? '')}</code
 											></pre>
@@ -238,13 +238,13 @@
 								{:else if op.type === 'add'}
 									<div class={`w-full min-w-0 border-l-2 border-green-500 ${lineBgClass('add')}`}>
 										<pre
-											class={`inline-block text-xs max-h-full px-2 py-0.5 ${preBgClass('add')}`}
+											class={`inline-block max-h-full px-2 py-0.5 text-xs ${preBgClass('add')}`}
 											style={preStyle()}><code class="language-svelte"
 												>{@html highlight(op.b ?? '')}</code
 											></pre>
 									</div>
 								{:else}
-									<div class="whitespace-pre text-xs opacity-50"></div>
+									<div class="text-xs whitespace-pre opacity-50"></div>
 								{/if}
 							{/each}
 						</div>
@@ -252,13 +252,13 @@
 				</div>
 			{:else}
 				<!-- unified inline diff -->
-				<Card class="h-full min-h-0 p-2 font-mono text-xs flex flex-col">
-					<div class="flex-1 min-h-0 overflow-auto">
+				<Card class="flex h-full min-h-0 flex-col p-2 font-mono text-xs">
+					<div class="min-h-0 flex-1 overflow-auto">
 						{#each buildHunks(diffOps, 3) as hunk, hi (hi)}
 							{#if hunk.hidden}
-								<div class="text-xs text-muted-foreground my-1">
+								<div class="text-muted-foreground my-1 text-xs">
 									<button
-										class="underline cursor-pointer"
+										class="cursor-pointer underline"
 										onclick={() => (showOnlyChanges = false)}
 										aria-label="Show context">{hunk.lines[0].text}</button
 									>
@@ -267,13 +267,13 @@
 								{#each hunk.lines as line, li (li)}
 									{#if !(showOnlyChanges && line.kind === 'context')}
 										<div
-											class={`grid grid-cols-[auto_1fr] gap-2 items-start ${lineClass(line.kind)} ${line.kind === 'context' ? 'text-foreground/80' : ''}`}
+											class={`grid grid-cols-[auto_1fr] items-start gap-2 ${lineClass(line.kind)} ${line.kind === 'context' ? 'text-foreground/80' : ''}`}
 										>
 											<span class="px-1 text-xs select-none"
 												>{line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ' '}</span
 											>
 											<pre
-												class={`inline-block text-xs max-h-full px-2 py-0.5 ${preBgClass(line.kind)}`}
+												class={`inline-block max-h-full px-2 py-0.5 text-xs ${preBgClass(line.kind)}`}
 												style={preStyle()}><code class="language-svelte"
 													>{@html highlight(line.text)}</code
 												></pre>
@@ -286,10 +286,10 @@
 				</Card>
 			{/if}
 		{:else}
-			<Card class="h-full min-h-0 p-2 font-mono text-sm flex flex-col">
-				<div class="flex-1 min-h-0 overflow-auto">
+			<Card class="flex h-full min-h-0 flex-col p-2 font-mono text-sm">
+				<div class="min-h-0 flex-1 overflow-auto">
 					{#if $currentCode}
-						<pre class={`inline-block text-xs max-h-full px-2 py-0.5`} style={preStyle()}><code
+						<pre class={`inline-block max-h-full px-2 py-0.5 text-xs`} style={preStyle()}><code
 								class="language-svelte">{@html highlight($currentCode ?? '')}</code
 							></pre>
 					{:else if browser}

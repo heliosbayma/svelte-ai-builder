@@ -176,11 +176,11 @@
 		} else if (urlChatId) {
 			// Chat ID in URL, load that session
 			const sessions = get(chatSessionsStore);
-			
+
 			const sessionExists = (sessions.sessions as Array<{ id: string }>).some(
 				(s) => s.id === urlChatId
 			);
-			
+
 			if (sessionExists) {
 				welcomeMode = false;
 				chatSessionsStore.setCurrent(urlChatId);
@@ -282,15 +282,17 @@
 	}
 </script>
 
-<main class="h-screen bg-background flex flex-col">
+<main class="bg-background flex h-screen flex-col">
 	{#if !isBootstrapped}
-		<div class="flex-1 grid place-content-center">
+		<div class="grid flex-1 place-content-center">
 			<div class="flex items-center justify-center">
 				<WireframeLoader width={94} height={60} />
 			</div>
 		</div>
 	{:else}
-		<div class={`transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+		<div
+			class={`transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
+		>
 			<AppHeader
 				showCode={$showCode}
 				onToggleCode={handleToggleCode}
@@ -334,9 +336,9 @@
 		{#if isWelcome}
 			<!-- Welcome layout: fully centered block + input -->
 			<div
-				class={`flex-1 min-h-0 grid place-content-center p-4 transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
+				class={`grid min-h-0 flex-1 place-content-center p-4 transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
 			>
-				<div class="max-w-3xl w-[92vw] sm:w-[80vw] md:w-[60vw] lg:w-[48rem] -translate-y-[10vh]">
+				<div class="w-[92vw] max-w-3xl -translate-y-[10vh] sm:w-[80vw] md:w-[60vw] lg:w-[48rem]">
 					<WelcomeScreen />
 
 					<ChatInterface
@@ -355,18 +357,22 @@
 		{:else if isMobile}
 			<!-- Mobile layout: only one PreviewPanel mounted -->
 			<div
-				class={`flex-1 min-h-0 flex flex-col relative transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
+				class={`relative flex min-h-0 flex-1 flex-col transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
 			>
 				{#if $showCode}
 					<!-- Mobile code view -->
-					<section class={`absolute inset-0 p-4 pt-0 overflow-y-auto ${chatHidden ? 'pb-4' : 'pb-64'}`}>
-						<div class="h-full bg-background rounded-lg border">
+					<section
+						class={`absolute inset-0 overflow-y-auto p-4 pt-0 ${chatHidden ? 'pb-4' : 'pb-64'}`}
+					>
+						<div class="bg-background h-full rounded-lg border">
 							<CodePanel {layout} {compilation} onCopy={copyCode} />
 						</div>
 					</section>
 				{:else}
 					<!-- Mobile preview -->
-					<section class={`absolute inset-0 p-4 pt-0 overflow-y-auto ${chatHidden ? 'pb-4' : 'pb-64'}`}>
+					<section
+						class={`absolute inset-0 overflow-y-auto p-4 pt-0 ${chatHidden ? 'pb-4' : 'pb-64'}`}
+					>
 						<PreviewPanel
 							class="h-full"
 							previewHtml={$previewHtml}
@@ -378,7 +384,7 @@
 				{/if}
 
 				{#if !chatHidden}
-					<div class="fixed bottom-0 left-0 right-0 z-30">
+					<div class="fixed right-0 bottom-0 left-0 z-30">
 						<ChatsList
 							collapsed={chatCollapsed}
 							mode={chatMode}
@@ -399,13 +405,12 @@
 								showMessages={true}
 							/>
 						</ChatsList>
-
 					</div>
 				{/if}
 
 				{#if chatHidden}
 					<button
-						class="fixed right-3 bottom-3 z-40 rounded-full bg-primary text-primary-foreground shadow px-3 py-2 flex items-center gap-2 cursor-pointer"
+						class="bg-primary text-primary-foreground fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 shadow"
 						onclick={showChat}
 						aria-label="Open chat"
 						title="Open chat"
@@ -419,9 +424,9 @@
 		{:else}
 			<!-- Desktop layout: only one PreviewPanel mounted -->
 			<div
-				class={`flex-1 min-h-0 transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
+				class={`min-h-0 flex-1 transition-opacity duration-500 ${bodyFade === 'in' ? 'opacity-100' : 'opacity-0'}`}
 			>
-				<Splitpanes class="flex-1 min-h-0" horizontal={false}>
+				<Splitpanes class="min-h-0 flex-1" horizontal={false}>
 					<Pane
 						minSize={LAYOUT.CHAT_SIZE_MIN}
 						size={LAYOUT.CHAT_SIZE_DEFAULT}
@@ -442,7 +447,7 @@
 					<Pane minSize={LAYOUT.CONTENT_MIN_SIZE} class="flex">
 						<Splitpanes horizontal={false} on:resize={handleCodePanesResize}>
 							<Pane minSize={30} size={$showCode ? $savedPreviewSize : 100} class="bg-background">
-								<div class="h-full flex flex-col">
+								<div class="flex h-full flex-col">
 									<div class="flex-1 p-4 pt-0">
 										<PreviewPanel
 											class="h-full"
@@ -458,10 +463,10 @@
 								<Pane
 									minSize={LAYOUT.PANE_MIN_SIZE}
 									size={$savedCodeSize}
-									class="bg-background rounded-lg border mr-4"
+									class="bg-background mr-4 rounded-lg border"
 								>
-									<div class="h-full min-h-0 flex flex-col">
-										<div class="flex-1 min-h-0 pt-0">
+									<div class="flex h-full min-h-0 flex-col">
+										<div class="min-h-0 flex-1 pt-0">
 											<CodePanel {layout} {compilation} onCopy={copyCode} />
 										</div>
 									</div>

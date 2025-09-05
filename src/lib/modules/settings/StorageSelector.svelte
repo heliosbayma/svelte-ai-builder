@@ -12,7 +12,7 @@
 <div class="flex items-center justify-between">
 	<Label class="text-sm">Storage mode</Label>
 	<div class="flex items-center gap-2">
-		<label class="text-xs flex items-center gap-1">
+		<label class="flex items-center gap-1 text-xs">
 			<input
 				type="radio"
 				name="storage"
@@ -22,7 +22,7 @@
 			/>
 			Local (persists across tabs)
 		</label>
-		<label class="text-xs flex items-center gap-1">
+		<label class="flex items-center gap-1 text-xs">
 			<input
 				type="radio"
 				name="storage"

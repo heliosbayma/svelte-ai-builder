@@ -187,7 +187,7 @@ function createChatStore() {
 			set(initialState);
 			persist.clear();
 		},
-		
+
 		/** Clear only messages, keep other state */
 		clearMessages: () => {
 			update((state) => {
@@ -208,7 +208,7 @@ function createChatStore() {
 			set(next);
 			persist.save(next);
 		},
-		
+
 		/** Alias for replaceMessages */
 		setMessages: (messages: ChatMessage[]) => {
 			const next: ChatState = {

@@ -46,9 +46,9 @@
 
 {#snippet versionCard(version: ComponentVersion, index: number, isCurrent: boolean)}
 	<article
-		class="w-full p-2.5 rounded-lg border {isCurrent
+		class="w-full rounded-lg border p-2.5 {isCurrent
 			? 'bg-accent/50 border-primary/20'
-			: 'hover:bg-accent transition-colors border-transparent hover:border-border cursor-pointer'}"
+			: 'hover:bg-accent hover:border-border cursor-pointer border-transparent transition-colors'}"
 		{...!isCurrent && {
 			onclick: () => selectVersion(index),
 			role: 'button',
@@ -62,13 +62,13 @@
 			'aria-label': 'Current version'
 		}}
 	>
-		<header class="flex items-center justify-between mb-1.5">
-			<div class="text-[11px] text-muted-foreground flex items-center gap-2">
+		<header class="mb-1.5 flex items-center justify-between">
+			<div class="text-muted-foreground flex items-center gap-2 text-[11px]">
 				<time datetime={new Date(version.timestamp).toISOString()}>
 					{new Date(version.timestamp).toLocaleTimeString()}
 				</time>
 				{#if !isCurrent}
-					<span class="opacity-70 text-[10px]" aria-label="Code length"
+					<span class="text-[10px] opacity-70" aria-label="Code length"
 						>{version.code?.length || 0} chars</span
 					>
 				{/if}
@@ -76,7 +76,7 @@
 
 			{#if isCurrent}
 				<span
-					class="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
+					class="bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-xs"
 					role="status"
 					aria-label="Current active version"
 				>
@@ -85,7 +85,7 @@
 			{:else}
 				<div class="flex items-center gap-1">
 					<button
-						class="p-1 hover:bg-accent hover:text-accent-foreground rounded transition-colors cursor-pointer opacity-60 hover:opacity-100"
+						class="hover:bg-accent hover:text-accent-foreground cursor-pointer rounded p-1 opacity-60 transition-colors hover:opacity-100"
 						onclick={(e) => {
 							e.stopPropagation();
 							handleRename(index, version.label);
@@ -100,7 +100,7 @@
 			{/if}
 		</header>
 
-		<div class="text-[13px] line-clamp-2">
+		<div class="line-clamp-2 text-[13px]">
 			{#if version.label}
 				<strong class="mr-1">{version.label}:</strong>
 			{/if}
@@ -120,7 +120,7 @@
 >
 	<section aria-label="Version history">
 		{#if $history.versions.length === 0}
-			<p class="text-xs text-muted-foreground">No versions yet.</p>
+			<p class="text-muted-foreground text-xs">No versions yet.</p>
 		{:else}
 			<ul class="space-y-1.5" role="list">
 				{#each filteredIndexes() as idx (idx)}

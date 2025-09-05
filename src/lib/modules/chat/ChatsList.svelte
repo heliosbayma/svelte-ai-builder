@@ -39,13 +39,13 @@
 <!-- Inline drawer instance (bar + optional content) -->
 <div
 	style="--chat-offset: calc(var(--chat-input-h,88px) + 4px);"
-	class={`border-t bg-card sm:pb-[var(--chat-offset)] ${
-		mode === 'expanded' ? 'h-[60vh] flex flex-col' : 'h-[45vh] flex flex-col sm:h-auto sm:pb-0'
+	class={`bg-card border-t sm:pb-[var(--chat-offset)] ${
+		mode === 'expanded' ? 'flex h-[60vh] flex-col' : 'flex h-[45vh] flex-col sm:h-auto sm:pb-0'
 	}`}
 >
 	<!-- Single sticky bar that stays above input using --chat-offset -->
 	<div
-		class="flex items-center justify-between px-3 py-2 bg-card/90 flex-shrink-0 sm:sticky sm:bottom-[var(--chat-offset)] sm:z-50"
+		class="bg-card/90 flex flex-shrink-0 items-center justify-between px-3 py-2 sm:sticky sm:bottom-[var(--chat-offset)] sm:z-50"
 	>
 		<Button
 			variant="ghost"
@@ -88,12 +88,12 @@
 	<!-- Drawer content (always shown on mobile since no collapse/expand buttons) -->
 	{#if mode !== 'fullscreen'}
 		<div
-			class={`overflow-y-auto ${mode === 'expanded' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 sm:h-[25vh]'}`}
+			class={`overflow-y-auto ${mode === 'expanded' ? 'min-h-0 flex-1' : 'min-h-0 flex-1 sm:h-[25vh]'}`}
 		>
 			{#if children}
 				{@render children?.()}
 			{:else}
-				<div class="p-3 text-xs text-muted-foreground">Messages will appear here</div>
+				<div class="text-muted-foreground p-3 text-xs">Messages will appear here</div>
 			{/if}
 		</div>
 	{/if}
@@ -101,10 +101,10 @@
 
 <!-- Fullscreen overlay for Messages -->
 {#if mode === 'fullscreen'}
-	<div class="fixed inset-0 z-50 bg-background sm:hidden">
-		<div class="h-full flex flex-col">
-			<div class="p-2 border-b flex items-center justify-between">
-				<span class="text-xs text-muted-foreground">Messages</span>
+	<div class="bg-background fixed inset-0 z-50 sm:hidden">
+		<div class="flex h-full flex-col">
+			<div class="flex items-center justify-between border-b p-2">
+				<span class="text-muted-foreground text-xs">Messages</span>
 				<div class="flex items-center gap-1">
 					<Button
 						variant="ghost"
@@ -128,7 +128,7 @@
 					</Button>
 				</div>
 			</div>
-			<div class="flex-1 min-h-0 overflow-y-auto">
+			<div class="min-h-0 flex-1 overflow-y-auto">
 				{#if children?.fullscreen}
 					{@render children.fullscreen()}
 				{:else}

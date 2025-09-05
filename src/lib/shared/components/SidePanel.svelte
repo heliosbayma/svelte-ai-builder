@@ -73,19 +73,19 @@
 			aria-labelledby="sidepanel-title"
 		>
 			<div
-				class="absolute inset-0 bg-black/30 animate-fade-in"
+				class="animate-fade-in absolute inset-0 bg-black/30"
 				onclick={onClose}
 				aria-hidden="true"
 			></div>
 			<aside
-				class="absolute right-0 top-0 bg-card/80 border shadow-xl overflow-auto backdrop-blur-sm w-full h-full rounded-none animate-fade-in sm:mt-[65px] sm:mr-4 sm:mb-4 sm:h-[calc(100vh-82px)] sm:w-[340px] sm:rounded-lg sm:animate-slide-in-right"
+				class="bg-card/80 animate-fade-in sm:animate-slide-in-right absolute top-0 right-0 h-full w-full overflow-auto rounded-none border shadow-xl backdrop-blur-sm sm:mt-[65px] sm:mr-4 sm:mb-4 sm:h-[calc(100vh-82px)] sm:w-[340px] sm:rounded-lg"
 				aria-labelledby="sidepanel-title"
 			>
-				<header class="px-3 py-2 border-b flex items-center justify-between">
+				<header class="flex items-center justify-between border-b px-3 py-2">
 					<h2 id="sidepanel-title" class="text-sm font-semibold">{title}</h2>
 					<button
 						onclick={onClose}
-						class="p-1 hover:bg-accent rounded transition-colors cursor-pointer"
+						class="hover:bg-accent cursor-pointer rounded p-1 transition-colors"
 						aria-label="Close"
 						title="Close"
 						type="button"
@@ -101,7 +101,7 @@
 								id="sidepanel-search"
 								type="search"
 								placeholder={searchPlaceholder}
-								class="w-full px-2.5 py-1.5 text-xs border rounded-md bg-background"
+								class="bg-background w-full rounded-md border px-2.5 py-1.5 text-xs"
 								value={searchValue}
 								oninput={handleSearch}
 							/>
@@ -116,15 +116,15 @@
 		{#if anchorRect}
 			<aside
 				bind:this={panelRef}
-				class="fixed z-50 bg-card border shadow-xl overflow-auto rounded-lg"
+				class="bg-card fixed z-50 overflow-auto rounded-lg border shadow-xl"
 				style={`top:${anchorRect.top + anchorRect.height + 8}px; left:${Math.min(anchorRect.left, Math.max(8, window.innerWidth - panelWidth - 8))}px; width:${panelWidth}px; max-height: calc(100vh - ${anchorRect.top + anchorRect.height + 16}px);`}
 				aria-labelledby="sidepanel-title"
 			>
-				<header class="px-3 py-2 border-b flex items-center justify-between">
+				<header class="flex items-center justify-between border-b px-3 py-2">
 					<h2 id="sidepanel-title" class="text-sm font-semibold">{title}</h2>
 					<button
 						onclick={onClose}
-						class="p-1 hover:bg-accent rounded transition-colors cursor-pointer"
+						class="hover:bg-accent cursor-pointer rounded p-1 transition-colors"
 						aria-label="Close"
 						title="Close"
 						type="button"
@@ -140,7 +140,7 @@
 								id="sidepanel-search"
 								type="search"
 								placeholder={searchPlaceholder}
-								class="w-full px-2.5 py-1.5 text-xs border rounded-md bg-background"
+								class="bg-background w-full rounded-md border px-2.5 py-1.5 text-xs"
 								value={searchValue}
 								oninput={handleSearch}
 							/>

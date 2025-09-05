@@ -145,15 +145,13 @@
 <form onsubmit={handleSubmit} aria-label={t('chat.inputForm')}>
 	<!-- Single composer-style input used across app -->
 	<div class="px-4 py-3">
-		<div
-			class="relative rounded-2xl border bg-background/70 backdrop-blur px-3 py-3 shadow-sm pb-14"
-		>
+		<div class="border-border bg-background relative rounded-2xl border px-3 py-3 pb-14 shadow-sm">
 			<Textarea
 				bind:value={currentPrompt}
 				onkeydown={handleKeydown}
 				oninput={autoGrow}
 				placeholder={t('chat.placeholder')}
-				class="w-full min-h-[68px] max-h-[240px] resize-none border-0 focus:ring-0 pr-16 overflow-x-hidden break-words whitespace-pre-wrap text-muted-foreground placeholder:text-muted-foreground/60"
+				class="text-foreground placeholder:text-muted-foreground max-h-[240px] min-h-[68px] w-full resize-none overflow-x-hidden border-0 pr-16 break-words whitespace-pre-wrap focus:ring-0"
 				disabled={isGenerating}
 				aria-label={t('chat.inputLabel')}
 				data-chat-textarea
@@ -161,15 +159,15 @@
 
 			<!-- Bottom controls: left checkbox; right model select + icon-only send -->
 			<div
-				class="absolute left-3 right-3 bottom-3 flex items-center justify-end sm:justify-between gap-2"
+				class="absolute right-3 bottom-3 left-3 flex items-center justify-end gap-2 sm:justify-between"
 			>
-				<div class="text-xs text-muted-foreground hidden sm:block">
-					<label class="flex items-center gap-1.5 cursor-pointer">
+				<div class="text-muted-foreground hidden text-xs sm:block">
+					<label class="flex cursor-pointer items-center gap-1.5">
 						<input
 							type="checkbox"
 							checked={sendOnEnter}
 							oninput={handleToggleSendOnEnter}
-							class="w-3 h-3"
+							class="h-3 w-3"
 						/>
 						<span>{sendOnEnter ? t('chat.sendOnEnter') : t('chat.sendWithCmd')}</span>
 					</label>
@@ -178,7 +176,7 @@
 				<div class="flex items-center gap-2 sm:gap-4">
 					{#if showIdeasButton}
 						<button
-							class="h-8 px-2 text-[10px] rounded border border-border/40 bg-card/30 hover:bg-card/50 text-muted-foreground cursor-pointer"
+							class="border-border/60 bg-card/40 hover:bg-card/80 text-muted-foreground h-9 cursor-pointer rounded border px-3 text-xs font-medium transition-colors"
 							type="button"
 							onclick={insertIdea}
 							aria-label={en.actions.ideas}
@@ -188,7 +186,7 @@
 					{/if}
 					<div class="relative inline-block">
 						<select
-							class="select-mobile h-8 pl-2 pr-6 text-[10px] rounded text-foreground border border-border/40 bg-background outline-none focus:outline-none focus:ring-0 cursor-pointer appearance-none text-right"
+							class="text-muted-foreground border-border/60 bg-card/40 hover:bg-card/80 h-9 cursor-pointer appearance-none rounded border pr-6 pl-2 text-xs font-medium transition-colors outline-none focus:ring-0 focus:outline-none"
 							value={modelInput}
 							onchange={handleModelChange}
 							disabled={isGenerating}
@@ -222,17 +220,17 @@
 							</optgroup>
 						</select>
 						<ChevronDown
-							class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+							class="text-muted-foreground pointer-events-none absolute top-1/2 right-2 h-3.5 w-3.5 -translate-y-1/2"
 						/>
 					</div>
 					<Button
 						type="submit"
 						size="sm"
 						disabled={isGenerating}
-						class="h-8 w-8 p-0 rounded-full"
+						class="h-8 w-8 rounded-full p-0"
 						aria-label={t('actions.send')}
 					>
-						<Send class="w-4 h-4" />
+						<Send class="h-4 w-4" />
 					</Button>
 				</div>
 			</div>
@@ -244,10 +242,10 @@
 						size="sm"
 						onclick={onBuildFromPlan}
 						disabled={isGenerating}
-						class="h-7 px-2 text-xs gap-1.5"
+						class="h-7 gap-1.5 px-2 text-xs"
 						aria-label={t('a11y.buildFromPlan')}
 					>
-						<Sparkles class="w-3.5 h-3.5" />
+						<Sparkles class="h-3.5 w-3.5" />
 						{t('actions.build')}
 					</Button>
 				</div>

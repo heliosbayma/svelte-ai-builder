@@ -218,12 +218,12 @@
 	});
 </script>
 
-<section class="h-full flex flex-col {className}">
-	<section class="flex-1 relative" aria-busy={!isMounted ? 'true' : 'false'} aria-live="polite">
-		<div class="w-full h-full rounded-lg border overflow-hidden relative">
+<section class="flex h-full flex-col {className}">
+	<section class="relative flex-1" aria-busy={!isMounted ? 'true' : 'false'} aria-live="polite">
+		<div class="relative h-full w-full overflow-hidden rounded-lg border">
 			<iframe
 				bind:this={iframeRef}
-				class="w-full h-full bg-background"
+				class="bg-background h-full w-full"
 				title="Component Preview"
 				src="/preview"
 				sandbox={sandboxAttrs}
@@ -254,13 +254,13 @@
 
 			{#if loadingMessage && !isWelcomeMessage(loadingMessage) && (!compiledJs || !isMounted)}
 				<div
-					class="absolute inset-0 grid place-content-center bg-background/40 backdrop-blur-[1px]"
+					class="bg-background/40 absolute inset-0 grid place-content-center backdrop-blur-[1px]"
 				>
-					<div class="text-center px-4">
+					<div class="px-4 text-center">
 						<div
-							class="mx-auto mb-3 w-6 h-6 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin"
+							class="border-foreground/30 border-t-foreground mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2"
 						></div>
-						<div class="text-sm text-muted-foreground">
+						<div class="text-muted-foreground text-sm">
 							{loadingMessage}
 						</div>
 					</div>

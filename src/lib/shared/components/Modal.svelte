@@ -90,7 +90,7 @@
 {#if isOpen}
 	<div
 		bind:this={modalRef}
-		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200"
+		class="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 duration-200"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="modal-title"
@@ -98,14 +98,14 @@
 		onkeydown={handleKeyDown}
 		tabindex="-1"
 	>
-		<Card class="w-full max-w-lg mx-4 animate-in zoom-in-95 duration-200">
+		<Card class="animate-in zoom-in-95 mx-4 w-full max-w-lg duration-200">
 			<CardHeader>
 				<CardTitle id="modal-title">{title}</CardTitle>
 				{#if description}
 					<CardDescription>
 						{description}
 						{#if showShortcutsHint}
-							<span class="text-xs block mt-1 opacity-70">Press ⌘+Enter to save, Esc to close</span>
+							<span class="mt-1 block text-xs opacity-70">Press ⌘+Enter to save, Esc to close</span>
 						{/if}
 					</CardDescription>
 				{/if}

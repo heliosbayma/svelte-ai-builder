@@ -24,10 +24,17 @@ const translations: Record<SupportedLanguage, TranslationKeys> = { en };
  * Get a nested value from an object using dot notation
  */
 function getNestedValue(obj: Record<string, unknown>, path: string): string {
-	return path.split('.').reduce((current: unknown, key) => 
-		(current && typeof current === 'object' && key in current) 
-			? (current as Record<string, unknown>)[key] 
-			: undefined, obj) as string || path;
+	return (
+		(path
+			.split('.')
+			.reduce(
+				(current: unknown, key) =>
+					current && typeof current === 'object' && key in current
+						? (current as Record<string, unknown>)[key]
+						: undefined,
+				obj
+			) as string) || path
+	);
 }
 
 /**

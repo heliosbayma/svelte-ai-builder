@@ -117,24 +117,24 @@
 <section
 	bind:this={chatContainer}
 	onscroll={handleScroll}
-	class="relative flex-1 overflow-y-auto p-4 scroll-smooth {className}"
+	class="relative flex-1 overflow-y-auto scroll-smooth p-4 {className}"
 	role="log"
 	aria-live="polite"
 	aria-busy={isGenerating ? 'true' : 'false'}
 	aria-label={t('chat.conversationLabel')}
 >
 	{#if browser && messages.length === 0}
-		<div class="min-h-[50vh] grid place-content-center -translate-y-[8vh]">
+		<div class="grid min-h-[50vh] -translate-y-[8vh] place-content-center">
 			<section
-				class="text-center text-muted-foreground"
+				class="text-muted-foreground text-center"
 				role="status"
 				aria-label={t('chat.emptyState')}
 			>
 				<p class="text-sm">{emptyTitleOverride || t('chat.emptyState')}</p>
 				{#if emptySubtextOverride}
-					<p class="text-xs mt-2 opacity-70">{emptySubtextOverride}</p>
+					<p class="mt-2 text-xs opacity-70">{emptySubtextOverride}</p>
 				{:else if suggestion}
-					<p class="text-xs mt-2 opacity-70">{`Try: "${suggestion}"`}</p>
+					<p class="mt-2 text-xs opacity-70">{`Try: "${suggestion}"`}</p>
 				{/if}
 			</section>
 		</div>

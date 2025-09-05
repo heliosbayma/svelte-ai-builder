@@ -7,7 +7,14 @@ export class StreamHandler {
 	async handleStreamResponse(
 		messages: LLMMessage[],
 		options: LLMOptions,
-		makeRequest: (provider: LLMProviderType, apiKey: string, model: string, messages: LLMMessage[], stream: boolean, signal?: AbortSignal) => Promise<Response>
+		makeRequest: (
+			provider: LLMProviderType,
+			apiKey: string,
+			model: string,
+			messages: LLMMessage[],
+			stream: boolean,
+			signal?: AbortSignal
+		) => Promise<Response>
 	): Promise<LLMResponse> {
 		const response = await makeRequest(
 			options.provider,
@@ -42,7 +49,7 @@ export class StreamHandler {
 				if (done) break;
 
 				const chunk = decoder.decode(value, { stream: true });
-				const lines = chunk.split('\n').filter(line => line.trim());
+				const lines = chunk.split('\n').filter((line) => line.trim());
 
 				for (const line of lines) {
 					const content = this.responseParser.parseStreamChunk(options.provider, line);

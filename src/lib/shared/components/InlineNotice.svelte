@@ -27,18 +27,15 @@
 </script>
 
 <section
-	class={`px-4 py-2 text-xs border  flex items-center justify-between ${styles[type]} ${className}`}
+	class={`px-4 py-2 text-xs border flex items-center justify-between ${styles[type]} ${className}`}
 >
-	<div>
-		{#if title}
-			<strong>{title}</strong>
-			{#if message}&nbsp;{/if}
-		{/if}
-		{#if message}{message}{/if}
+	<div class="leading-tight sm:flex sm:flex-wrap sm:items-baseline mr-6 min-w-48">
+		<strong><p class="block sm:inline mr-3 mb-1 sm:mb-0">{title}</p></strong>
+		<p class="block mr-4">{message}</p>
 		{@render children?.()}
 	</div>
 	{#if actionLabel}
-		<button class="underline cursor-pointer" onclick={() => onAction?.()} aria-label={actionLabel}>
+		<button class="cursor-pointer underline" onclick={() => onAction?.()} aria-label={actionLabel}>
 			{actionLabel}
 		</button>
 	{/if}
